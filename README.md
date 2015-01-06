@@ -48,7 +48,7 @@ p:Rect(x, y, w, h, [fill_color], [outline_color])
 p:Mat(material, x, y, w, h)
 
 -- Note: horizontally aligned to center by default
-p:Text(text, font, x, y, [color], [halign], [valign])
+p:Text(text, font, x, y, [color], [halign], [valign], [scissor_rect])
 
 local isMouseOrUseDown = p:Button(text, font, x, y, w, h, [color])
 
@@ -61,8 +61,12 @@ p:Render(pos, angles, scale)
 ```
 
 ## Tips
+Read the code. It's not that bad. If there's a part you don't understand, post an issue.
+
 Cache the panel. Use a local variable for hooks and ```self.Panel = self.Panel or tdui.CreatePanel()``` for ```ENT:Draw()```.
 
 Don't be afraid to use the y-axis as the horizontal center point. 3D2D-IMGUI supports negative coordinates and the example uses them.
 
 Do figure out how to use non-queued mode (ie. initiating render context manually using ```tdui:BeginRender()``` and ```tdui:EndRender()```, and using ```tdui:Draw[ComponentName]()``` for drawing components), if you need the extra performance.
+
+If you need to make eg. scrolling text, ```p:Text()``` accepts ```scissor_rect``` as the last parameter. It should be a table containing ```x, y, x2, y2```. 
