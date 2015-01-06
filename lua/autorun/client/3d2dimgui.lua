@@ -210,12 +210,12 @@ function tdui_meta:_WorldToLocal(rayOrigin, rayDirection)
 		local diff = hitPos - planePos
 
 		-- Magic
-	    diff:Rotate(Angle(0, -angles.y, 0))
-	    diff:Rotate(Angle(-angles.p, 0, 0))
-	    diff:Rotate(Angle(0, 0, -angles.r))
+		diff:Rotate(Angle(0, -angles.y, 0))
+		diff:Rotate(Angle(-angles.p, 0, 0))
+		diff:Rotate(Angle(0, 0, -angles.r))
 
-	    local xchange = diff.x
-	    local ychange = diff.y
+		local xchange = diff.x
+		local ychange = diff.y
 
 		xchange = xchange * (1/scale)
 		ychange = ychange * (1/scale)
@@ -317,8 +317,8 @@ function tdui_meta:BeginRender(pos, angles, scale)
 	render.SetColorMaterial()
 
 	-- Start 3D2D render context
-    render.PushFilterMin(TEXFILTER.ANISOTROPIC)
-    render.PushFilterMag(TEXFILTER.ANISOTROPIC)
+	render.PushFilterMin(TEXFILTER.ANISOTROPIC)
+	render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 
 	cam.Start3D2D(self._pos, self._angles, self._scale)
 end
@@ -327,8 +327,8 @@ function tdui_meta:EndRender()
 	-- End 3D2D render context
 	cam.End3D2D()
 
-    render.PopFilterMin()
-    render.PopFilterMag()
+	render.PopFilterMin()
+	render.PopFilterMag()
 
 	-- Reset parameters
 	table.Empty(self.renderQueue)
@@ -339,7 +339,7 @@ function tdui_meta:Render(pos, angles, scale)
 
 	self:BeginRender()
 
-		for i=1,#self.renderQueue do
+		for i=1, #self.renderQueue do
 			local r, e = pcall(self.renderQueue[i])
 			if not r then print("Render err: ", e) end
 		end
