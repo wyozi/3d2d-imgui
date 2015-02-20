@@ -36,16 +36,19 @@ __As a library to a project:__ copy [lua/autorun/client/3d2dimgui.lua](../blob/m
 __As a generic addon:__ ```git clone https://github.com/wyozi/3d2d-imgui.git``` in the ```garrysmod/addons``` folder.
 
 ## Usage
-Panel creation:
+Panel creation (should be called only once):
 ```lua
 local p = tdui.Create()
 ```
 
-Drawing components:
+Drawing components (should be called in a drawing hook, eg. ```ENT:Draw()``` or ```PostDrawTranslucentRenderables```):
 ```lua
 p:Rect(x, y, w, h, [fill_color], [outline_color])
 
 p:Mat(material, x, y, w, h)
+
+-- Same vertices layout as surface.DrawPoly
+p:Polygon(vertices, color, material)
 
 -- Note: horizontally aligned to center by default
 p:Text(text, font, x, y, [color], [halign], [valign], [scissor_rect])
@@ -55,13 +58,13 @@ local isMouseOrUseDown = p:Button(text, font, x, y, w, h, [color])
 p:Cursor()
 ```
 
-Rendering:
+Rendering (should be called in same drawing hook as drawing components):
 ```lua
 p:Render(pos, angles, scale)
 ```
 
 ## Tips
-Read the code. It's not that bad. If there's a part you don't understand, post an issue.
+Code is mostly self-documenting. If there's a part you don't understand, feel free to post an issue.
 
 Cache the panel. Use a local variable for hooks and ```self.Panel = self.Panel or tdui.CreatePanel()``` for ```ENT:Draw()```.
 
