@@ -205,6 +205,8 @@ function tdui_meta:DrawCursor()
 		surface.SetDrawColor(255, 0, 0)
 	elseif band(inputstate, tdui.FSTATE_PRESSING) ~= 0 then
 		surface.SetDrawColor(255, 127, 0)
+	else
+		surface.SetDrawColor(255, 255, 255)
 	end
 
 	surface.DrawLine(self._mx-2, self._my, self._mx+2, self._my)
