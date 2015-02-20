@@ -290,6 +290,14 @@ function tdui_meta:_UpdateInputStatus()
 	self._mx = mx or -1
 	self._my = my or -1
 
+	-- Don't update input down statuses more than once during a frame
+	-- This is required for some edge cases (eg input in a vehicle?)
+	local curFrame = FrameNumber()
+	if self._lastInputFrame == curFrame then
+		return
+	end
+	self._lastInputFrame = curFrame
+
 	-- Update input down statuses
 	local oldInput = self._inputDown
 	local nowInput = 0
