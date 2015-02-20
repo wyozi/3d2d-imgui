@@ -188,10 +188,13 @@ function tdui_meta:Button(str, font, x, y, w, h, clr)
 		self:DrawButton(str, font, x, y, w, h, clr)
 	end)
 
-	if band(self:_CheckInputInRect(x, y, w, h), tdui.FSTATE_JUSTPRESSED) ~= 0 then
-		return true
-	end
-	return false
+	local inputstate = self:_CheckInputInRect(x, y, w, h)
+
+	local just_pressed = band(inputstate, tdui.FSTATE_JUSTPRESSED) ~= 0
+	local pressing = band(inputstate, tdui.FSTATE_PRESSING) ~= 0
+	local hovering = band(inputstate, tdui.FSTATE_HOVERING) ~= 0
+
+	return just_pressed, pressing, hovering
 end
 
 
