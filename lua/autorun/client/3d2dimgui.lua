@@ -254,10 +254,7 @@ function tdui_meta:_WorldToLocal(rayOrigin, rayDirection)
 		ychange = ychange * (1/scale)
 
 		local finalx, finaly = xchange, -ychange
-
-		if finalx >= -1000 and finalx <= 1000 and finaly >= -1000 and finaly <= 1000 then
-			return finalx, finaly
-		end
+		return finalx, finaly
 	end
 end
 
