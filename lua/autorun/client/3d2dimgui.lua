@@ -294,10 +294,10 @@ function tdui_meta:_UpdateInputStatus()
 	local justPressed = 0
 
 	local function CheckInput(code, isDown)
-		if isDown then nowInput = bit.bor(nowInput, code) end
+		if isDown then nowInput = bor(nowInput, code) end
 
-		if oldInput and bit.band(oldInput, code) == 0 and isDown then
-			justPressed = bit.bor(justPressed, code)
+		if oldInput and band(oldInput, code) == 0 and isDown then
+			justPressed = bor(justPressed, code)
 		end
 	end
 	local function CheckMouse(gm_code, code)
