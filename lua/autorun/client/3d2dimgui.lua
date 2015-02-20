@@ -168,16 +168,20 @@ function tdui_meta:DrawButton(str, font, x, y, w, h, clr)
 
 	local inputstate = self:_CheckInputInRect(x, y, w, h)
 
-	if     band(inputstate, bor(tdui.FSTATE_PRESSING, tdui.FSTATE_JUSTPRESSED)) ~= 0 then
+	local just_pressed = band(inputstate, tdui.FSTATE_JUSTPRESSED) ~= 0
+	local pressing = band(inputstate, tdui.FSTATE_PRESSING) ~= 0
+	local hovering = band(inputstate, tdui.FSTATE_HOVERING) ~= 0
+
+	if just_pressed or pressing then
 		clr = Color(200, 80, 0)
-	elseif band(inputstate, tdui.FSTATE_HOVERING) ~= 0 then
+	elseif hovering then
 		clr = Color(255, 127, 0)
 	end
 
 	self:DrawText(str, font, x + w/2, y + h/2, clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	self:DrawRect(x, y, w, h, Color(0, 0, 0, 0), clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
-	return pressed, hovered
+	return just_pressed, pressing, hovering
 end
 function tdui_meta:Button(str, font, x, y, w, h, clr)
 	self:_QueueRender(function()
