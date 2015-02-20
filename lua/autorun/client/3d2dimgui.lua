@@ -302,9 +302,11 @@ function tdui_meta:_UpdateInputStatus()
 	local justPressed = 0
 
 	local function CheckInput(code, isDown)
-		if isDown then nowInput = bor(nowInput, code) end
+		if not isDown then return end
 
-		if oldInput and band(oldInput, code) == 0 and isDown then
+		nowInput = bor(nowInput, code)
+
+		if oldInput and band(oldInput, code) == 0 then
 			justPressed = bor(justPressed, code)
 		end
 	end
