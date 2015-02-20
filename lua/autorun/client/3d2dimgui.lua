@@ -93,6 +93,25 @@ function tdui_meta:Rect(x, y, w, h, clr, out_clr)
 	end)
 end
 
+function tdui_meta:DrawPolygon(verts, clr, mat)
+	clr = clr or Color(255, 255, 255, 15)
+
+	surface.SetDrawColor(clr)
+
+	if mat then
+		surface.SetMaterial(mat)
+	else
+		draw.NoTexture()
+	end
+
+	surface.DrawPoly(verts)
+end
+function tdui_meta:Polygon(verts, clr, mat)
+	self:_QueueRender(function()
+		self:DrawPolygon(verts, clr, mat)
+	end)
+end
+
 function tdui_meta:DrawMat(mat, x, y, w, h)
 	surface.SetMaterial(mat)
 	surface.SetDrawColor(255, 255, 255)
