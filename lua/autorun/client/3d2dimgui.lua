@@ -86,6 +86,8 @@ function tdui_meta:DrawRect(x, y, w, h, clr, out_clr)
 		surface.SetDrawColor(out_clr)
 		surface.DrawOutlinedRect(x, y, w, h)
 	end
+
+	self:_ExpandRenderBounds(x, y, w, h)
 end
 function tdui_meta:Rect(x, y, w, h, clr, out_clr)
 	self:_QueueRender(function()
@@ -116,6 +118,8 @@ function tdui_meta:DrawMat(mat, x, y, w, h)
 	surface.SetMaterial(mat)
 	surface.SetDrawColor(255, 255, 255)
 	surface.DrawTexturedRect(x, y, w, h)
+
+	self:_ExpandRenderBounds(x, y, w, h)
 end
 function tdui_meta:Mat(mat, x, y, w, h)
 	self:_QueueRender(function()
@@ -154,6 +158,8 @@ function tdui_meta:DrawText(str, font, x, y, clr, halign, valign, scissor_rect)
 	if scissor_rect then
 		self:DisableStencil()
 	end
+
+	self:_ExpandRenderBounds(aligned_x, aligned_y, tw, th)
 end
 function tdui_meta:Text(str, font, x, y, clr, halign, valign, scissor_rect)
 	self:_QueueRender(function()
@@ -181,6 +187,8 @@ function tdui_meta:DrawButton(str, font, x, y, w, h, clr)
 	self:DrawText(str, font, x + w/2, y + h/2, clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	self:DrawRect(x, y, w, h, Color(0, 0, 0, 0), clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
+	self:_ExpandRenderBounds(x, y, w, h)
+	
 	return just_pressed, pressing, hovering
 end
 function tdui_meta:Button(str, font, x, y, w, h, clr)
@@ -199,8 +207,16 @@ end
 
 
 function tdui_meta:DrawCursor()
-	local inputstate = self:_CheckInputInRect(-1000, -1000, 2000, 2000)
-	--print(inputstate)
+	local rb = self._renderBounds
+
+	local inputstate = self:_CheckInputInRect(rb.x, rb.y, rb.x2-rb.x, rb.y2-rb.y)
+
+	-- If cursor is not within render bounds at all (is not hovering it)
+	-- we should not draw a cursor
+	if band(inputstate, tdui.FSTATE_HOVERING) == 0 then
+		return
+	end
+	
 	if band(inputstate, tdui.FSTATE_JUSTPRESSED) ~= 0 then
 		surface.SetDrawColor(255, 0, 0)
 	elseif band(inputstate, tdui.FSTATE_PRESSING) ~= 0 then
@@ -227,6 +243,16 @@ function tdui_meta:_QueueRender(fn)
 
 	if not self.renderQueue then return end
 	self.renderQueue[#self.renderQueue+1] = fn
+end
+
+--- Should be called every time something is drawn with an approximate bounding
+-- box of the drawn area. Used for eg. determining where we should show the cursor
+function tdui_meta:_ExpandRenderBounds(x, y, w, h)
+	self._renderBounds.x = math.min(self._renderBounds.x, x)
+	self._renderBounds.y = math.min(self._renderBounds.y, y)
+
+	self._renderBounds.x2 = math.max(self._renderBounds.x2, x+w)
+	self._renderBounds.y2 = math.max(self._renderBounds.y2, y+h)
 end
 
 function tdui_meta:_WorldToLocal(rayOrigin, rayDirection)
@@ -352,6 +378,13 @@ function tdui_meta:BeginRender(pos, angles, scale)
 	-- Reset parameters
 	self.renderQueue = self.renderQueue or {}
 	self:_UpdateInputStatus()
+	
+	-- Reset render bounds
+	self._renderBounds = self._renderBounds or {}
+	self._renderBounds.x = 0
+	self._renderBounds.y = 0
+	self._renderBounds.x2 = 0
+	self._renderBounds.y2 = 0
 
 	-- Reset colors, materials
 	surface.SetDrawColor(255, 255, 255)
