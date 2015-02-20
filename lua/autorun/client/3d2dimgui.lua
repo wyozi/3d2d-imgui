@@ -214,6 +214,11 @@ function tdui_meta:Cursor()
 end
 
 function tdui_meta:_QueueRender(fn)
+	if self._rendering then
+		fn()
+		return
+	end
+
 	if not self.renderQueue then return end
 	self.renderQueue[#self.renderQueue+1] = fn
 end
@@ -344,9 +349,13 @@ function tdui_meta:BeginRender(pos, angles, scale)
 	render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 
 	cam.Start3D2D(self._pos, self._angles, self._scale)
+	
+	self._rendering = true
 end
 
 function tdui_meta:EndRender()
+	self._rendering = false
+	
 	-- End 3D2D render context
 	cam.End3D2D()
 
