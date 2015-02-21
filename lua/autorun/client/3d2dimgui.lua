@@ -60,6 +60,9 @@ function tdui_meta:EnableRectStencil(x, y, w, h)
 	render.SetStencilPassOperation(STENCIL_REPLACE)
 	render.SetStencilFailOperation(STENCIL_KEEP)
 	render.SetStencilZFailOperation(STENCIL_KEEP)
+	
+	render.SetStencilWriteMask(1)
+	render.SetStencilTestMask(1)
 	render.SetStencilReferenceValue(1)
 
 	render.OverrideColorWriteEnable(true, false)
