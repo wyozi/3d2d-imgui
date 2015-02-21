@@ -7,26 +7,29 @@
 ```lua
 local p
 hook.Add("PostDrawTranslucentRenderables", "Paint3D2DUI", function()
-    -- Create a 3D2D-IMGUI instance and cache it
+	-- Create a 3D2D-IMGUI instance and cache it
+	-- Note: if drawing TDUI inside a ENT:Draw(), you should cache the
+	--       panel to the entity instance (self) instead of a local variable.
+	--       That way there will be one panel per entity.
 	p = p or tdui.Create()
 
-    -- Draw a rectangle (x, y, w, h, [fill_color], [outline_color])
+	-- Draw a rectangle (x, y, w, h, [fill_color], [outline_color])
 	p:Rect(-80, 0, 160, 150, _, Color(255, 255, 255))
 
-    -- Draw a line of text (text, font, x, y, [color], [halign], [valign])
-    -- Note: text is implicitly horizontally centered
+	-- Draw a line of text (text, font, x, y, [color], [halign], [valign])
+	-- Note: text is implicitly horizontally centered
 	p:Text("Hello there!", "DermaLarge", 0, 5)
 
-    -- Draw a button (text, font, x, y, w, h, [color])
-    -- Return value is boolean indicating whether left mouse or +use was pressed during this frame
+	-- Draw a button (text, font, x, y, w, h, [color])
+	-- Return value is boolean indicating whether left mouse or +use was pressed during this frame
 	if p:Button("Say hi", "DermaDefaultBold", -50, 40, 100, 25) then
 		RunConsoleCommand("say", "hi!")
 	end
 
-    -- Draws a simple crosshair cursor at current mouse position
-    p:Cursor()
-
-    -- Renders all the queued draw commands
+	-- Draws a simple crosshair cursor at current mouse position
+	p:Cursor()
+	
+	-- Renders all the queued draw commands
 	p:Render(Vector(980, -83, -79), Angle(0, 0, 0), 0.4)
 end)
 ```
