@@ -43,6 +43,23 @@ tdui.FSTATE_HOVERING    = lshift(1, 0)
 tdui.FSTATE_PRESSING    = lshift(1, 1) -- if input is pressed right now
 tdui.FSTATE_JUSTPRESSED = lshift(1, 2) -- if input was pressed during this frame
 
+-- Color constants
+tdui.COLOR_BLACK = Color(0, 0, 0)
+tdui.COLOR_BLACK_TRANSPARENT = Color(0, 0, 0, 0)
+
+tdui.COLOR_WHITE = Color(255, 255, 255)
+tdui.COLOR_WHITE_TRANSPARENT = Color(255, 255, 255, 0)
+tdui.COLOR_WHITE_TRANSLUCENT = Color(255, 255, 255, 15)
+
+tdui.COLOR_RED = Color(255, 0, 0)
+tdui.COLOR_GREEN = Color(0, 255, 0)
+tdui.COLOR_BLUE = Color(0, 0, 255)
+tdui.COLOR_YELLOW = Color(255, 255, 0)
+
+tdui.COLOR_ORANGE = Color(255, 127, 0)
+tdui.COLOR_ORANGE_DARK = Color(220, 80, 0)
+tdui.COLOR_ORANGE_LIGHT = Color(255, 180, 0)
+
 -- The main function. See below for functions in tdui.Meta
 function tdui.Create()
 	return setmetatable({}, tdui.Meta)
@@ -67,7 +84,7 @@ function tdui_meta:EnableRectStencil(x, y, w, h)
 
 	render.OverrideColorWriteEnable(true, false)
 
-	surface.SetDrawColor(255, 255, 255)
+	surface.SetDrawColor(tdui.COLOR_WHITE)
 	surface.DrawRect(x, y, w, h)
 
 	render.OverrideColorWriteEnable(false, false)
@@ -80,7 +97,7 @@ function tdui_meta:DisableStencil()
 end
 
 function tdui_meta:DrawRect(x, y, w, h, clr, out_clr)
-	clr = clr or Color(255, 255, 255, 15)
+	clr = clr or tdui.COLOR_WHITE_TRANSLUCENT
 
 	surface.SetDrawColor(clr)
 	surface.DrawRect(x, y, w, h)
@@ -99,7 +116,7 @@ function tdui_meta:Rect(x, y, w, h, clr, out_clr)
 end
 
 function tdui_meta:DrawPolygon(verts, clr, mat)
-	clr = clr or Color(255, 255, 255, 15)
+	clr = clr or tdui.COLOR_WHITE_TRANSLUCENT
 
 	surface.SetDrawColor(clr)
 
@@ -119,7 +136,7 @@ end
 
 function tdui_meta:DrawMat(mat, x, y, w, h)
 	surface.SetMaterial(mat)
-	surface.SetDrawColor(255, 255, 255)
+	surface.SetDrawColor(tdui.COLOR_WHITE)
 	surface.DrawTexturedRect(x, y, w, h)
 
 	self:_ExpandRenderBounds(x, y, w, h)
@@ -131,7 +148,7 @@ function tdui_meta:Mat(mat, x, y, w, h)
 end
 
 function tdui_meta:DrawText(str, font, x, y, clr, halign, valign, scissor_rect)
-	clr = clr or Color(255, 255, 255)
+	clr = clr or tdui.COLOR_WHITE
 
 	surface.SetFont(font)
 	surface.SetTextColor(clr)
@@ -171,7 +188,7 @@ function tdui_meta:Text(str, font, x, y, clr, halign, valign, scissor_rect)
 end
 
 function tdui_meta:DrawButton(str, font, x, y, w, h, clr)
-	clr = clr or Color(255, 255, 255)
+	clr = clr or tdui.COLOR_WHITE
 
 	surface.SetFont(font)
 
@@ -182,13 +199,13 @@ function tdui_meta:DrawButton(str, font, x, y, w, h, clr)
 	local hovering = band(inputstate, tdui.FSTATE_HOVERING) ~= 0
 
 	if just_pressed or pressing then
-		clr = Color(200, 80, 0)
+		clr = tdui.COLOR_ORANGE_DARK
 	elseif hovering then
-		clr = Color(255, 127, 0)
+		clr = tdui.COLOR_ORANGE
 	end
 
 	self:DrawText(str, font, x + w/2, y + h/2, clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-	self:DrawRect(x, y, w, h, Color(0, 0, 0, 0), clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	self:DrawRect(x, y, w, h, tdui.COLOR_BLACK_TRANSPARENT, clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
 	self:_ExpandRenderBounds(x, y, w, h)
 	
@@ -221,11 +238,11 @@ function tdui_meta:DrawCursor()
 	end
 	
 	if band(inputstate, tdui.FSTATE_JUSTPRESSED) ~= 0 then
-		surface.SetDrawColor(255, 0, 0)
+		surface.SetDrawColor(tdui.COLOR_RED)
 	elseif band(inputstate, tdui.FSTATE_PRESSING) ~= 0 then
-		surface.SetDrawColor(255, 127, 0)
+		surface.SetDrawColor(tdui.COLOR_ORANGE)
 	else
-		surface.SetDrawColor(255, 255, 255)
+		surface.SetDrawColor(tdui.COLOR_WHITE)
 	end
 
 	surface.DrawLine(self._mx-2, self._my, self._mx+2, self._my)
@@ -390,7 +407,7 @@ function tdui_meta:BeginRender(pos, angles, scale)
 	self._renderBounds.y2 = 0
 
 	-- Reset colors, materials
-	surface.SetDrawColor(255, 255, 255)
+	surface.SetDrawColor(tdui.COLOR_WHITE)
 	render.SetColorMaterial()
 
 	-- Start 3D2D render context
