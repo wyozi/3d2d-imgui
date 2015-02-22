@@ -115,6 +115,22 @@ function tdui_meta:Rect(x, y, w, h, clr, out_clr)
 	end)
 end
 
+function tdui_meta:DrawLine(x, y, x2, y2, clr)
+	clr = clr or tdui.COLOR_WHITE
+
+	surface.SetDrawColor(clr)
+	surface.DrawLine(x, y, x2, y2)
+
+	local bx, by = math.min(x, x2), math.min(y, y2)
+	local bw, bh = math.max(x, x2)-bx, math.max(y, y2)-by
+	self:_ExpandRenderBounds(bx, by, bw, bh)
+end
+function tdui_meta:Line(x, y, x2, y2, clr)
+	self:_QueueRender(function()
+		self:DrawLine(x, y, x2, y2, clr)
+	end)
+end
+
 function tdui_meta:DrawPolygon(verts, clr, mat)
 	clr = clr or tdui.COLOR_WHITE_TRANSLUCENT
 
