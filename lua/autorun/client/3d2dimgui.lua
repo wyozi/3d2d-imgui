@@ -270,6 +270,10 @@ function tdui_meta:Cursor()
 	end)
 end
 
+function tdui_meta:Custom(fn)
+	self:_QueueRender(fn)
+end
+
 function tdui_meta:_QueueRender(fn)
 	if self._rendering then
 		local r, e = pcall(fn, self)
