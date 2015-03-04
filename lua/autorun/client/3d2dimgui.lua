@@ -272,7 +272,7 @@ end
 
 function tdui_meta:_QueueRender(fn)
 	if self._rendering then
-		local r, e = pcall(fn)
+		local r, e = pcall(fn, self)
 		if not r then print("TDUI rendering error: ", e) end
 		return
 	end
@@ -454,7 +454,7 @@ function tdui_meta:Render(pos, angles, scale)
 	self:BeginRender()
 
 		for i=1, #self.renderQueue do
-			local r, e = pcall(self.renderQueue[i])
+			local r, e = pcall(self.renderQueue[i], self)
 			if not r then print("TDUI rendering error: ", e) end
 		end
 
