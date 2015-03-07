@@ -321,7 +321,7 @@ function tdui_meta:_WorldToLocal(rayOrigin, rayDirection)
 		ychange = ychange * (1/scale)
 
 		local finalx, finaly = xchange, -ychange
-		return finalx, finaly
+		return finalx, finaly, hitPos
 	end
 end
 
@@ -330,7 +330,7 @@ function tdui_meta:_CheckInputInRect(x, y, w, h, input)
 
 	local state = 0
 
-	if not self._mx or not self._my then
+	if not self._mx or not self._my or self._mObscured then
 		return state
 	end
 
@@ -350,9 +350,23 @@ end
 
 function tdui_meta:_UpdateInputStatus()
 	-- Calculate mouse position in local space
-	local mx, my = self:_WorldToLocal(LocalPlayer():EyePos(), gui.ScreenToVector(ScrW()/2, ScrH()/2))
-	self._mx = mx or -1
-	self._my = my or -1
+	local eyepos = LocalPlayer():EyePos()
+	local eyenormal = gui.ScreenToVector(ScrW()/2, ScrH()/2)
+
+	local mx, my, hitPos = self:_WorldToLocal(eyepos, eyenormal)
+	self._mx = mx
+	self._my = my
+
+	if hitPos then
+		local tr = util.TraceLine({
+			start = eyepos,
+			endpos = hitPos
+		})
+
+		self._mObscured = tr.Hit
+	else
+		self._mObscured = true
+	end
 
 	-- Don't update input down statuses more than once during a frame
 	-- This is required for some edge cases (eg input in a vehicle?)
