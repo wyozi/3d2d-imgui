@@ -349,23 +349,31 @@ function tdui_meta:_CheckInputInRect(x, y, w, h, input)
 end
 
 function tdui_meta:_UpdateInputStatus()
-	-- Calculate mouse position in local space
 	local eyepos = LocalPlayer():EyePos()
 	local eyenormal = gui.ScreenToVector(ScrW()/2, ScrH()/2)
 
+	-- Calculate mouse position in local space
 	local mx, my, hitPos = self:_WorldToLocal(eyepos, eyenormal)
 	self._mx = mx
 	self._my = my
 
-	if hitPos then
+	-- Dot product between eye direction and panel backward facing normal vector
+	local backnormal = self:GetBackNormal()
+	local plyLookingAtPanel = backnormal and (backnormal:Dot(eyenormal) > 0)
+
+	-- If player is not even looking at the panel, it is obscured for sure
+	-- This makes sure you cannot press buttons from the "back" side of the panel
+	if not plyLookingAtPanel then
+		self._mObscured = true
+
+	-- Check for obstructions in the world (eg props or the worldspawn)
+	elseif hitPos then
 		local tr = util.TraceLine({
 			start = eyepos,
 			endpos = hitPos
 		})
 
 		self._mObscured = tr.Hit
-	else
-		self._mObscured = true
 	end
 
 	-- Don't update input down statuses more than once during a frame
@@ -424,6 +432,20 @@ function tdui_meta:_UpdatePAS(pos, angles, scale)
 	self._pos    = pos    or self._pos
 	self._angles = angles or self._angles
 	self._scale  = scale  or self._scale
+end
+
+--- Returns a normal vector facing away from the TDUI panel towards the front of the panel
+-- Due to angle rotations in _UpdatePAS this is not the obvious self._angles:Forward()
+function tdui_meta:GetFrontNormal()
+	if not self._angles then return end
+	return self._angles:Up()
+end
+
+--- Returns a normal vector facing away from the TDUI panel towards the back of the panel
+-- Example usecase: figuring out if the player is looking at the panel or not
+function tdui_meta:GetBackNormal()
+	local frontnormal = self:GetFrontNormal()
+	if frontnormal then return -frontnormal end
 end
 
 function tdui_meta:BeginRender(pos, angles, scale)
