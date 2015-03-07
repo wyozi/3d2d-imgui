@@ -348,6 +348,12 @@ function tdui_meta:_CheckInputInRect(x, y, w, h, input)
 	return state
 end
 
+local traceEntFilter = function(ent)
+	if ent:GetClass() == "prop_physics" then
+		return true
+	end
+end
+
 function tdui_meta:_UpdateInputStatus()
 	local eyepos = LocalPlayer():EyePos()
 	local eyenormal = gui.ScreenToVector(ScrW()/2, ScrH()/2)
@@ -370,7 +376,9 @@ function tdui_meta:_UpdateInputStatus()
 	elseif hitPos then
 		local tr = util.TraceLine({
 			start = eyepos,
-			endpos = hitPos
+			endpos = hitPos,
+
+			filter = traceEntFilter
 		})
 
 		self._mObscured = tr.Hit
