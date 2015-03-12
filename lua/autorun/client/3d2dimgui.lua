@@ -407,7 +407,7 @@ function tdui_meta:_UpdateInputStatus()
 		end
 	end
 	local function CheckMouse(gm_code, code)
-		CheckInput(code, input.IsMouseDown(gm_code))
+		CheckInput(code, input.IsMouseDown(gm_code) and not vgui.CursorVisible())
 	end
 	local function CheckInKey(gm_code, code)
 		CheckInput(code, LocalPlayer():KeyDown(gm_code))
