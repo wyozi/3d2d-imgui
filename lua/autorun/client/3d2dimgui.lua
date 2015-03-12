@@ -224,7 +224,10 @@ function tdui_meta:DrawButton(str, font, x, y, w, h, clr)
 	self:DrawRect(x, y, w, h, tdui.COLOR_BLACK_TRANSPARENT, clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
 	self:_ExpandRenderBounds(x, y, w, h)
-	
+
+	if not self:ShouldAcceptInput() then
+		return false, false, false
+	end
 	return just_pressed, pressing, hovering
 end
 function tdui_meta:Button(str, font, x, y, w, h, clr)
@@ -232,11 +235,17 @@ function tdui_meta:Button(str, font, x, y, w, h, clr)
 		self:DrawButton(str, font, x, y, w, h, clr)
 	end)
 
-	local inputstate = self:_CheckInputInRect(x, y, w, h)
+	local just_pressed, pressing, hovering
 
-	local just_pressed = band(inputstate, tdui.FSTATE_JUSTPRESSED) ~= 0
-	local pressing = band(inputstate, tdui.FSTATE_PRESSING) ~= 0
-	local hovering = band(inputstate, tdui.FSTATE_HOVERING) ~= 0
+	if self:ShouldAcceptInput() then
+		local inputstate = self:_CheckInputInRect(x, y, w, h)
+
+		just_pressed = band(inputstate, tdui.FSTATE_JUSTPRESSED) ~= 0
+		pressing = band(inputstate, tdui.FSTATE_PRESSING) ~= 0
+		hovering = band(inputstate, tdui.FSTATE_HOVERING) ~= 0
+	else
+		just_pressed, pressing, hovering = false, false, false
+	end
 
 	return just_pressed, pressing, hovering
 end
@@ -326,6 +335,9 @@ function tdui_meta:_WorldToLocal(rayOrigin, rayDirection)
 end
 
 function tdui_meta:_CheckInputInRect(x, y, w, h, input)
+	-- Update input. If it's already been updated this frame, this'll NOP
+	self:_UpdateInputStatus()
+
 	input = input or tdui.FINPUT_PRESSED
 
 	local state = 0
@@ -353,8 +365,7 @@ local traceEntFilter = function(ent)
 		return true
 	end
 end
-
-function tdui_meta:_UpdateInputStatus()
+function tdui_meta:_ComputeScreenMouse()
 	local eyepos = LocalPlayer():EyePos()
 	local eyenormal = gui.ScreenToVector(ScrW()/2, ScrH()/2)
 
@@ -383,15 +394,9 @@ function tdui_meta:_UpdateInputStatus()
 
 		self._mObscured = tr.Hit
 	end
+end
 
-	-- Don't update input down statuses more than once during a frame
-	-- This is required for some edge cases (eg input in a vehicle?)
-	local curFrame = FrameNumber()
-	if self._lastInputFrame == curFrame then
-		return
-	end
-	self._lastInputFrame = curFrame
-
+function tdui_meta:_ComputeInput()
 	-- Update input down statuses
 	local oldInput = self._inputDown
 	local nowInput = 0
@@ -420,6 +425,18 @@ function tdui_meta:_UpdateInputStatus()
 
 	self._inputDown = nowInput
 	self._justPressed = justPressed
+end
+
+function tdui_meta:_UpdateInputStatus()
+	-- Don't update input down statuses more than once during a frame
+	local curFrame = FrameNumber()
+	if self._lastInputFrame == curFrame then
+		return
+	end
+	self._lastInputFrame = curFrame
+
+	self:_ComputeScreenMouse()
+	self:_ComputeInput()
 end
 
 -- The default values for rendering params
@@ -494,6 +511,16 @@ function tdui_meta:EndRender()
 
 	-- Reset parameters
 	table.Empty(self.renderQueue)
+
+	-- Count how many renders have been done this frame
+	local curFrame = FrameNumber()
+	if self._lastRenderFrame == curFrame then
+		self._frameRenderCount = (self._frameRenderCount or 0) + 1
+	else
+		self._frameRenderCount = 1
+	end
+
+	self._lastRenderFrame = FrameNumber()
 end
 
 function tdui_meta:Render(pos, angles, scale)
@@ -507,4 +534,19 @@ function tdui_meta:Render(pos, angles, scale)
 		end
 
 	self:EndRender()
+end
+
+-- Is this the first render during this frame
+function tdui_meta:IsFirstRenderThisFrame()
+	return self._frameRenderCount == 1
+end
+
+-- Are we rendering to the "main" render target aka the screen
+function tdui_meta:IsWorldRenderpass()
+	return not IsValid(render.GetRenderTarget())
+end
+
+-- Note: does not affect return values from CheckInputInRect
+function tdui_meta:ShouldAcceptInput()
+	return self:IsFirstRenderThisFrame()
 end
