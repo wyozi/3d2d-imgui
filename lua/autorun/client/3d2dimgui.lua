@@ -385,6 +385,13 @@ function tdui_meta:_ComputeScreenMouse()
 
 	-- Check for obstructions in the world (eg props or the worldspawn)
 	elseif hitPos then
+
+		-- If we're ignoring Z, it doesn't matter if we hit something
+		if self._IgnoreZ then
+			self._mObscured = false
+			return
+		end
+
 		local tr = util.TraceLine({
 			start = eyepos,
 			endpos = hitPos,
@@ -473,6 +480,10 @@ function tdui_meta:GetBackNormal()
 	if frontnormal then return -frontnormal end
 end
 
+function tdui_meta:SetIgnoreZ(b)
+	self._IgnoreZ = b
+end
+
 function tdui_meta:BeginRender(pos, angles, scale)
 	self:_UpdatePAS(pos, angles, scale)
 
@@ -491,6 +502,14 @@ function tdui_meta:BeginRender(pos, angles, scale)
 	surface.SetDrawColor(tdui.COLOR_WHITE)
 	render.SetColorMaterial()
 
+	-- Set IgnoreZ
+	if self._IgnoreZ then
+		cam.IgnoreZ(true)
+		self._IgnoreZActive = true
+	else
+		self._IgnoreZActive = false
+	end
+
 	-- Start 3D2D render context
 	render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 	render.PushFilterMag(TEXFILTER.ANISOTROPIC)
@@ -508,6 +527,10 @@ function tdui_meta:EndRender()
 
 	render.PopFilterMin()
 	render.PopFilterMag()
+
+	if self._IgnoreZActive then
+		cam.IgnoreZ(false)
+	end
 
 	-- Reset parameters
 	table.Empty(self.renderQueue)

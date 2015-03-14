@@ -61,6 +61,11 @@ local isMouseOrUseDown = p:Button(text, font, x, y, w, h, [color])
 p:Cursor()
 ```
 
+Configuration:
+```lua
+p:SetIgnoreZ(true) -- Draws and accepts input through walls
+```
+
 Rendering (should be called in same drawing hook as drawing components):
 ```lua
 p:Render(pos, angles, scale)
