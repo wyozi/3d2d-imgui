@@ -375,8 +375,8 @@ function tdui_meta:_ComputeScreenMouse()
 	self._mx = mx
 	self._my = my
 
-	-- If inputAspectRatio exists, we need to multiply by it
-	if self._inputAspectRatio then
+	-- Input aspect ratio for rendering to texture
+	if self._inputAspectRatio and self._my then
 		self._my = self._my * self._inputAspectRatio
 	end
 
