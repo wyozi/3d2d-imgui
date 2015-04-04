@@ -290,7 +290,8 @@ function tdui_meta:_QueueRender(fn)
 		return
 	end
 
-	if not self.renderQueue then return end
+	self.renderQueue = self.renderQueue or {}
+
 	self.renderQueue[#self.renderQueue+1] = fn
 end
 
@@ -374,6 +375,11 @@ function tdui_meta:_ComputeScreenMouse()
 	self._mx = mx
 	self._my = my
 
+	-- If inputAspectRatio exists, we need to multiply by it
+	if self._inputAspectRatio then
+		self._my = self._my * self._inputAspectRatio
+	end
+
 	-- Dot product between eye direction and panel backward facing normal vector
 	local backnormal = self:GetBackNormal()
 	local plyLookingAtPanel = backnormal and (backnormal:Dot(eyenormal) > 0)
@@ -434,13 +440,14 @@ function tdui_meta:_ComputeInput()
 	self._justPressed = justPressed
 end
 
-function tdui_meta:_UpdateInputStatus()
+function tdui_meta:_UpdateInputStatus(forceUpdate, inputAspectRatio)
 	-- Don't update input down statuses more than once during a frame
 	local curFrame = FrameNumber()
-	if self._lastInputFrame == curFrame then
+	if self._lastInputFrame == curFrame and not forceUpdate then
 		return
 	end
 	self._lastInputFrame = curFrame
+	self._inputAspectRatio = inputAspectRatio
 
 	self:_ComputeScreenMouse()
 	self:_ComputeInput()
@@ -484,13 +491,13 @@ function tdui_meta:SetIgnoreZ(b)
 	self._IgnoreZ = b
 end
 
-function tdui_meta:BeginRender(pos, angles, scale)
+function tdui_meta:PreRenderReset()
 	self:_UpdatePAS(pos, angles, scale)
 
 	-- Reset parameters
 	self.renderQueue = self.renderQueue or {}
 	self:_UpdateInputStatus()
-	
+
 	-- Reset render bounds
 	self._renderBounds = self._renderBounds or {}
 	self._renderBounds.x = 0
@@ -501,6 +508,10 @@ function tdui_meta:BeginRender(pos, angles, scale)
 	-- Reset colors, materials
 	surface.SetDrawColor(tdui.COLOR_WHITE)
 	render.SetColorMaterial()
+end
+
+function tdui_meta:BeginRender(pos, angles, scale)
+	self:PreRenderReset()
 
 	-- Set IgnoreZ
 	if self._IgnoreZ then
@@ -510,7 +521,7 @@ function tdui_meta:BeginRender(pos, angles, scale)
 		self._IgnoreZActive = false
 	end
 
-	-- Start 3D2D render context
+	-- Start render context
 	render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 	render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 
@@ -519,19 +530,7 @@ function tdui_meta:BeginRender(pos, angles, scale)
 	self._rendering = true
 end
 
-function tdui_meta:EndRender()
-	self._rendering = false
-	
-	-- End 3D2D render context
-	cam.End3D2D()
-
-	render.PopFilterMin()
-	render.PopFilterMag()
-
-	if self._IgnoreZActive then
-		cam.IgnoreZ(false)
-	end
-
+function tdui_meta:PostRenderReset()
 	-- Reset parameters
 	table.Empty(self.renderQueue)
 
@@ -542,26 +541,68 @@ function tdui_meta:EndRender()
 	else
 		self._frameRenderCount = 1
 	end
+end
+
+function tdui_meta:EndRender()
+	self._rendering = false
+	
+	-- End render context
+	cam.End3D2D()
+
+	render.PopFilterMin()
+	render.PopFilterMag()
+
+	if self._IgnoreZActive then
+		cam.IgnoreZ(false)
+	end
+
+	self:PostRenderReset()
 
 	self._lastRenderFrame = FrameNumber()
+end
+
+function tdui_meta:RenderQueued()
+	for i=1, #self.renderQueue do
+		local r, e = pcall(self.renderQueue[i], self)
+		if not r then print("TDUI rendering error: ", e) end
+	end
 end
 
 function tdui_meta:Render(pos, angles, scale)
 	self:_UpdatePAS(pos, angles, scale)
 
 	self:BeginRender()
-
-		for i=1, #self.renderQueue do
-			local r, e = pcall(self.renderQueue[i], self)
-			if not r then print("TDUI rendering error: ", e) end
-		end
-
+		self:PreRenderReset()
+		self:RenderQueued()
+		self:PostRenderReset()
 	self:EndRender()
+end
+
+-- EXPERIMENTAL rendering to texture
+-- See examples/rendertomat.lua
+function tdui_meta:RenderToTexture(rtw, rth)
+	local id = "TDUIMat_" .. (string.match(tostring(self), "table: 0x(.*)"))
+
+	local w, h = rtw or 512, rth or 512
+	local rt = GetRenderTarget(id, w, h)
+
+	render.PushRenderTarget(rt)
+	render.Clear(0, 0, 0, 255)
+
+		cam.Start2D()
+			self:PreRenderReset()
+			self:RenderQueued()
+			self:PostRenderReset()
+		cam.End2D()
+
+	render.PopRenderTarget()
+
+	return rt
 end
 
 -- Is this the first render during this frame
 function tdui_meta:IsFirstRenderThisFrame()
-	return self._frameRenderCount == 1
+	return not self._frameRenderCount or self._frameRenderCount == 1
 end
 
 -- Are we rendering to the "main" render target aka the screen
