@@ -60,6 +60,22 @@ tdui.COLOR_ORANGE = Color(255, 127, 0)
 tdui.COLOR_ORANGE_DARK = Color(220, 80, 0)
 tdui.COLOR_ORANGE_LIGHT = Color(255, 180, 0)
 
+-- Helper function. Call this inside a deprecated function as the first statement
+local d = {}
+function tdui.Deprecate(msg)
+	local dbg = debug.getinfo(3, "Sl")
+	local srcstr = string.format("%s@%d", dbg.source, dbg.currentline)
+	
+	if d[srcstr] then return end
+	d[srcstr] = true
+	
+	if not msg then
+		local thisdbg = debug.getinfo(2, "n")
+		msg = thisdbg.name .. "() is deprecated"
+	end
+	print("[TDUI Deprecation Warning] " .. msg .. " (called at " .. srcstr .. ")")
+end
+
 -- The main function. See below for functions in tdui.Meta
 function tdui.Create()
 	return setmetatable({}, tdui.Meta)
@@ -510,7 +526,7 @@ function tdui_meta:PreRenderReset()
 	render.SetColorMaterial()
 end
 
-function tdui_meta:BeginRender(pos, angles, scale)
+function tdui_meta:BeginRender()
 	self:PreRenderReset()
 
 	-- Set IgnoreZ
@@ -572,9 +588,7 @@ function tdui_meta:Render(pos, angles, scale)
 	self:_UpdatePAS(pos, angles, scale)
 
 	self:BeginRender()
-		self:PreRenderReset()
 		self:RenderQueued()
-		self:PostRenderReset()
 	self:EndRender()
 end
 
@@ -613,4 +627,43 @@ end
 -- Note: does not affect return values from CheckInputInRect
 function tdui_meta:ShouldAcceptInput()
 	return self:IsFirstRenderThisFrame()
+end
+
+-- Create singleton instance of TDUI
+-- It can be used for simplicity
+
+local singleton = tdui.Create()
+
+function tdui.Begin(pos, ang, scale)
+	if not pos then error("pos expected", 2) end
+	if not ang then error("ang expected", 2) end
+	scale = scale or 1
+
+	singleton:_UpdatePAS(pos, ang, scale)
+
+	singleton:BeginRender()
+end
+
+-- Not real currying, I know
+local function curry(f, x)
+	return function(...)
+		return f(x, ...)
+	end
+end
+
+-- Drawing
+tdui.Rect    = curry(singleton.DrawRect, singleton)
+tdui.Line    = curry(singleton.DrawLine, singleton)
+tdui.Mat     = curry(singleton.DrawMat, singleton)
+tdui.Polygon = curry(singleton.DrawPolygon, singleton)
+tdui.Text    = curry(singleton.DrawText, singleton)
+tdui.Button  = curry(singleton.DrawButton, singleton)
+tdui.Cursor  = curry(singleton.DrawCursor, singleton)
+tdui.Custom  = curry(singleton.Custom, singleton)
+
+-- Configuration
+tdui.SetIgnoreZ  = curry(singleton.SetIgnoreZ, singleton)
+
+function tdui.End()
+	singleton:EndRender()
 end
