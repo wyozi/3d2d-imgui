@@ -527,6 +527,8 @@ function tdui_meta:PreRenderReset()
 end
 
 function tdui_meta:BeginRender()
+	if self._rendering then error("Calling BeginRender() with an ongoing render") end
+	
 	self:PreRenderReset()
 
 	-- Set IgnoreZ
@@ -560,6 +562,8 @@ function tdui_meta:PostRenderReset()
 end
 
 function tdui_meta:EndRender()
+	if not self._rendering then error("Calling EndRender() without matching BeginRender()") end
+
 	self._rendering = false
 	
 	-- End render context
