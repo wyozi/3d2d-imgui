@@ -65,10 +65,10 @@ local d = {}
 function tdui.Deprecate(msg)
 	local dbg = debug.getinfo(3, "Sl")
 	local srcstr = string.format("%s@%d", dbg.source, dbg.currentline)
-	
+
 	if d[srcstr] then return end
 	d[srcstr] = true
-	
+
 	if not msg then
 		local thisdbg = debug.getinfo(2, "n")
 		msg = thisdbg.name .. "() is deprecated"
@@ -87,29 +87,34 @@ tdui_meta.__index = tdui_meta
 tdui.Meta = tdui_meta
 
 function tdui_meta:EnableRectStencil(x, y, w, h)
-	render.ClearStencil()
-	render.SetStencilEnable(true)
-	render.SetStencilCompareFunction(STENCIL_ALWAYS)
-	render.SetStencilPassOperation(STENCIL_REPLACE)
-	render.SetStencilFailOperation(STENCIL_KEEP)
-	render.SetStencilZFailOperation(STENCIL_KEEP)
-	
-	render.SetStencilWriteMask(1)
-	render.SetStencilTestMask(1)
-	render.SetStencilReferenceValue(1)
+	self:_QueueRender(function()
+		render.ClearStencil()
+		render.SetStencilEnable(true)
+		render.SetStencilCompareFunction(STENCIL_ALWAYS)
+		render.SetStencilPassOperation(STENCIL_REPLACE)
+		render.SetStencilFailOperation(STENCIL_KEEP)
+		render.SetStencilZFailOperation(STENCIL_KEEP)
 
-	render.OverrideColorWriteEnable(true, false)
+		render.SetStencilWriteMask(1)
+		render.SetStencilTestMask(1)
+		render.SetStencilReferenceValue(1)
 
-	surface.SetDrawColor(tdui.COLOR_WHITE)
-	surface.DrawRect(x, y, w, h)
+		render.OverrideColorWriteEnable(true, false)
 
-	render.OverrideColorWriteEnable(false, false)
+		surface.SetDrawColor(tdui.COLOR_WHITE)
+		surface.DrawRect(x, y, w, h)
 
-	render.SetStencilCompareFunction(STENCIL_EQUAL)
+		render.OverrideColorWriteEnable(false, false)
+
+		render.SetStencilCompareFunction(STENCIL_EQUAL)
+	end)
 end
 
-function tdui_meta:DisableStencil()
+local FUNC_DISABLESTENCIL = function()
 	render.SetStencilEnable(false)
+end
+function tdui_meta:DisableStencil()
+	self:_QueueRender(FUNC_DISABLESTENCIL)
 end
 
 function tdui_meta:DrawRect(x, y, w, h, clr, out_clr)
@@ -277,7 +282,7 @@ function tdui_meta:DrawCursor()
 	if band(inputstate, tdui.FSTATE_HOVERING) == 0 then
 		return
 	end
-	
+
 	if band(inputstate, tdui.FSTATE_JUSTPRESSED) ~= 0 then
 		surface.SetDrawColor(tdui.COLOR_RED)
 	elseif band(inputstate, tdui.FSTATE_PRESSING) ~= 0 then
@@ -528,7 +533,7 @@ end
 
 function tdui_meta:BeginRender()
 	if self._rendering then error("Calling BeginRender() with an ongoing render") end
-	
+
 	self:PreRenderReset()
 
 	-- Set IgnoreZ
@@ -544,7 +549,7 @@ function tdui_meta:BeginRender()
 	render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 
 	cam.Start3D2D(self._pos, self._angles, self._scale)
-	
+
 	self._rendering = true
 end
 
@@ -565,7 +570,7 @@ function tdui_meta:EndRender()
 	if not self._rendering then error("Calling EndRender() without matching BeginRender()") end
 
 	self._rendering = false
-	
+
 	-- End render context
 	cam.End3D2D()
 
