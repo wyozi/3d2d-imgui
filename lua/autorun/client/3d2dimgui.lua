@@ -86,8 +86,8 @@ tdui_meta.__index = tdui_meta
 
 tdui.Meta = tdui_meta
 
-function tdui_meta:EnableRectStencil(x, y, w, h)
-	self:_QueueRender(function()
+tdui.RenderOperations = {
+	["stencil_rect"] = function(self, x, y, w, h)
 		render.ClearStencil()
 		render.SetStencilEnable(true)
 		render.SetStencilCompareFunction(STENCIL_ALWAYS)
@@ -107,14 +107,18 @@ function tdui_meta:EnableRectStencil(x, y, w, h)
 		render.OverrideColorWriteEnable(false, false)
 
 		render.SetStencilCompareFunction(STENCIL_EQUAL)
-	end)
+	end,
+	["stencil_off"] = function()
+		render.SetStencilEnable(false)
+	end
+}
+
+function tdui_meta:EnableRectStencil(x, y, w, h)
+	self:_QueueRenderOP("stencil_rect", x, y, w, h)
 end
 
-local FUNC_DISABLESTENCIL = function()
-	render.SetStencilEnable(false)
-end
 function tdui_meta:DisableStencil()
-	self:_QueueRender(FUNC_DISABLESTENCIL)
+	self:_QueueRenderOP("stencil_off")
 end
 
 function tdui_meta:DrawRect(x, y, w, h, clr, out_clr)
@@ -130,10 +134,9 @@ function tdui_meta:DrawRect(x, y, w, h, clr, out_clr)
 
 	self:_ExpandRenderBounds(x, y, w, h)
 end
+tdui.RenderOperations["rect"] = tdui_meta.DrawRect
 function tdui_meta:Rect(x, y, w, h, clr, out_clr)
-	self:_QueueRender(function()
-		self:DrawRect(x, y, w, h, clr, out_clr)
-	end)
+	self:_QueueRenderOP("rect", x, y, w, h, clr, out_clr)
 end
 
 function tdui_meta:DrawLine(x, y, x2, y2, clr)
@@ -146,10 +149,9 @@ function tdui_meta:DrawLine(x, y, x2, y2, clr)
 	local bw, bh = math.max(x, x2)-bx, math.max(y, y2)-by
 	self:_ExpandRenderBounds(bx, by, bw, bh)
 end
+tdui.RenderOperations["line"] = tdui_meta.DrawLine
 function tdui_meta:Line(x, y, x2, y2, clr)
-	self:_QueueRender(function()
-		self:DrawLine(x, y, x2, y2, clr)
-	end)
+	self:_QueueRenderOP("line", x, y, x2, y2, clr)
 end
 
 function tdui_meta:DrawPolygon(verts, clr, mat)
@@ -165,10 +167,9 @@ function tdui_meta:DrawPolygon(verts, clr, mat)
 
 	surface.DrawPoly(verts)
 end
+tdui.RenderOperations["polygon"] = tdui_meta.DrawPolygon
 function tdui_meta:Polygon(verts, clr, mat)
-	self:_QueueRender(function()
-		self:DrawPolygon(verts, clr, mat)
-	end)
+	self:_QueueRenderOP("polygon", verts, clr, mat)
 end
 
 function tdui_meta:DrawMat(mat, x, y, w, h)
@@ -178,10 +179,9 @@ function tdui_meta:DrawMat(mat, x, y, w, h)
 
 	self:_ExpandRenderBounds(x, y, w, h)
 end
+tdui.RenderOperations["mat"] = tdui_meta.DrawMat
 function tdui_meta:Mat(mat, x, y, w, h)
-	self:_QueueRender(function()
-		self:DrawMat(mat, x, y, w, h)
-	end)
+	self:_QueueRenderOP("mat", mat, x, y, w, h)
 end
 
 function tdui_meta:DrawText(str, font, x, y, clr, halign, valign, scissor_rect)
@@ -218,10 +218,9 @@ function tdui_meta:DrawText(str, font, x, y, clr, halign, valign, scissor_rect)
 
 	self:_ExpandRenderBounds(aligned_x, aligned_y, tw, th)
 end
+tdui.RenderOperations["text"] = tdui_meta.DrawText
 function tdui_meta:Text(str, font, x, y, clr, halign, valign, scissor_rect)
-	self:_QueueRender(function()
-		self:DrawText(str, font, x, y, clr, halign, valign, scissor_rect)
-	end)
+	self:_QueueRenderOP("text", str, font, x, y, clr, halign, valign, scissor_rect)
 end
 
 function tdui_meta:DrawButton(str, font, x, y, w, h, clr)
@@ -251,10 +250,9 @@ function tdui_meta:DrawButton(str, font, x, y, w, h, clr)
 	end
 	return just_pressed, pressing, hovering
 end
+tdui.RenderOperations["button"] = tdui_meta.DrawButton
 function tdui_meta:Button(str, font, x, y, w, h, clr)
-	self:_QueueRender(function()
-		self:DrawButton(str, font, x, y, w, h, clr)
-	end)
+	self:_QueueRenderOP("button", str, font, x, y, w, h, clr)
 
 	local just_pressed, pressing, hovering
 
@@ -294,10 +292,9 @@ function tdui_meta:DrawCursor()
 	surface.DrawLine(self._mx-2, self._my, self._mx+2, self._my)
 	surface.DrawLine(self._mx, self._my-2, self._mx, self._my+2)
 end
+tdui.RenderOperations["cursor"] = tdui_meta.DrawCursor
 function tdui_meta:Cursor()
-	self:_QueueRender(function()
-		self:DrawCursor()
-	end)
+	self:_QueueRenderOP("cursor")
 end
 
 function tdui_meta:Custom(fn)
@@ -312,8 +309,25 @@ function tdui_meta:_QueueRender(fn)
 	end
 
 	self.renderQueue = self.renderQueue or {}
-
 	self.renderQueue[#self.renderQueue+1] = fn
+end
+
+-- Queues a render operation to be done during next render pass
+function tdui_meta:_QueueRenderOP(op, ...)
+	local fn = tdui.RenderOperations[op]
+	if not fn then
+		error("Trying to queue inexistent render operation '" .. op .. "''")
+		return
+	end
+
+	if self._rendering then
+		local r, e = pcall(fn, self)
+		if not r then print("TDUI rendering error: ", e) end
+		return
+	end
+
+	self.renderQueue = self.renderQueue or {}
+	self.renderQueue[#self.renderQueue+1] = {fn, ...}
 end
 
 --- Should be called every time something is drawn with an approximate bounding
@@ -588,7 +602,17 @@ end
 
 function tdui_meta:RenderQueued()
 	for i=1, #self.renderQueue do
-		local r, e = pcall(self.renderQueue[i], self)
+		local fn = self.renderQueue[i]
+
+		local r, e
+
+		-- If its a queued operation
+		if type(fn) == "table" then
+			r, e =  pcall(fn[1], self, unpack(fn, 2))
+		else
+			r, e = pcall(fn, self)
+		end
+
 		if not r then print("TDUI rendering error: ", e) end
 	end
 end
