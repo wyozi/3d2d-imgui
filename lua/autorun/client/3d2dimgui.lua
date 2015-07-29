@@ -528,8 +528,6 @@ function tdui_meta:SetIgnoreZ(b)
 end
 
 function tdui_meta:PreRenderReset()
-	self:_UpdatePAS(pos, angles, scale)
-
 	-- Reset parameters
 	self.renderQueue = self.renderQueue or {}
 	self:_UpdateInputStatus()
