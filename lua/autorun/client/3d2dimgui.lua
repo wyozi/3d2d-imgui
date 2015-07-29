@@ -223,8 +223,9 @@ function tdui_meta:Text(str, font, x, y, clr, halign, valign, scissor_rect)
 	self:_QueueRenderOP("text", str, font, x, y, clr, halign, valign, scissor_rect)
 end
 
-function tdui_meta:DrawButton(str, font, x, y, w, h, clr)
+function tdui_meta:DrawButton(str, font, x, y, w, h, clr, hover_clr)
 	clr = clr or tdui.COLOR_WHITE
+	hover_clr = hover_clr or tdui.COLOR_ORANGE
 
 	surface.SetFont(font)
 
@@ -237,7 +238,7 @@ function tdui_meta:DrawButton(str, font, x, y, w, h, clr)
 	if just_pressed or pressing then
 		clr = tdui.COLOR_ORANGE_DARK
 	elseif hovering then
-		clr = tdui.COLOR_ORANGE
+		clr = hover_clr
 	end
 
 	self:DrawText(str, font, x + w/2, y + h/2, clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
@@ -251,8 +252,8 @@ function tdui_meta:DrawButton(str, font, x, y, w, h, clr)
 	return just_pressed, pressing, hovering
 end
 tdui.RenderOperations["button"] = tdui_meta.DrawButton
-function tdui_meta:Button(str, font, x, y, w, h, clr)
-	self:_QueueRenderOP("button", str, font, x, y, w, h, clr)
+function tdui_meta:Button(str, font, x, y, w, h, clr, hover_clr)
+	self:_QueueRenderOP("button", str, font, x, y, w, h, clr, hover_clr)
 
 	local just_pressed, pressing, hovering
 
