@@ -346,28 +346,17 @@ function tdui_meta:_WorldToLocal(rayOrigin, rayDirection)
 	local angles = self._angles
 	local scale = self._scale
 
-	local planePos = pos
 	local planeNormal = angles:Up()
 
-	local scale = self._scale
-
-	local hitPos = util.IntersectRayWithPlane(rayOrigin, rayDirection, planePos, planeNormal)
+	local hitPos = util.IntersectRayWithPlane(rayOrigin, rayDirection, pos, planeNormal)
 	if hitPos then
-		local diff = hitPos - planePos
+		local diff = pos - hitPos
 
-		-- Magic
-		diff:Rotate(Angle(0, -angles.y, 0))
-		diff:Rotate(Angle(-angles.p, 0, 0))
-		diff:Rotate(Angle(0, 0, -angles.r))
+		-- This cool code is from Willox's keypad CalculateCursorPos
+		local x = diff:Dot(-angles:Forward()) / scale
+		local y = diff:Dot(-angles:Right()) / scale
 
-		local xchange = diff.x
-		local ychange = diff.y
-
-		xchange = xchange * (1/scale)
-		ychange = ychange * (1/scale)
-
-		local finalx, finaly = xchange, -ychange
-		return finalx, finaly, hitPos
+		return x, y, hitPos
 	end
 end
 
