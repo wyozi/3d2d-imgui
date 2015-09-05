@@ -79,7 +79,9 @@ end
 
 -- The main function. See below for functions in tdui.Meta
 function tdui.Create()
-	return setmetatable({}, tdui.Meta)
+	local ui = setmetatable({}, tdui.Meta)
+	hook.Call("TDUICreated", nil, ui)
+	return ui
 end
 
 -- This is accessed so often we can improve performance by making it local
@@ -642,6 +644,7 @@ function tdui_meta:BeginRender()
 	cam.Start3D2D(self._pos, self._angles, self._scale)
 
 	self._rendering = true
+	self._renderStarted = SysTime()
 end
 
 function tdui_meta:PostRenderReset()
@@ -655,6 +658,8 @@ function tdui_meta:PostRenderReset()
 	else
 		self._frameRenderCount = 1
 	end
+
+	self._renderEnded = SysTime()
 end
 
 function tdui_meta:EndRender()
@@ -727,6 +732,10 @@ end
 -- Is this the first render during this frame
 function tdui_meta:IsFirstRenderThisFrame()
 	return not self._frameRenderCount or self._frameRenderCount == 1
+end
+
+function tdui_meta:WasRenderedThisFrame()
+	return self._lastRenderFrame == FrameNumber()
 end
 
 -- Are we rendering to the "main" render target aka the screen
