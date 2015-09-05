@@ -225,11 +225,34 @@ function tdui_meta:Mat(mat, x, y, w, h, clr)
 	self:_QueueRenderOP("mat", mat, x, y, w, h, clr)
 end
 
+function tdui_meta:_ParseFont(font)
+	-- special font
+	if font:sub(1, 1) == "!" then
+		local cachedName = "TDUICached_" .. font
+
+		self._cachedFonts = self._cachedFonts or {}
+		local cached = self._cachedFonts[font]
+		if cached then return cached end
+
+		local name, size = font:match("!([^@]+)@(.+)")
+		local parsedSize = tonumber(size)
+
+		surface.CreateFont(cachedName, {
+			font = name,
+			size = parsedSize
+		})
+
+		self._cachedFonts[font] = cachedName
+		return cachedName
+	end
+	return font
+end
+
 function tdui_meta:DrawText(str, font, x, y, clr, halign, valign, scissor_rect)
 	local color = self:_GetSkinParams("text", "color")
 	clr = clr or color or tdui.COLOR_WHITE
 
-	surface.SetFont(font)
+	surface.SetFont(self:_ParseFont(font))
 	surface.SetTextColor(clr)
 
 	local tw, th = surface.GetTextSize(str)
@@ -273,7 +296,7 @@ function tdui_meta:DrawButton(str, font, x, y, w, h, clr, hover_clr)
 	fgColor = clr or fgColor
 	fgHoverColor = hover_clr or fgHoverColor
 
-	surface.SetFont(font)
+	surface.SetFont(self:_ParseFont(font))
 
 	local inputstate = self:_CheckInputInRect(x, y, w, h)
 

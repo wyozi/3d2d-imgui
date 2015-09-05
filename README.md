@@ -28,7 +28,7 @@ hook.Add("PostDrawTranslucentRenderables", "Paint3D2DUI", function()
 
 	-- Draws a simple crosshair cursor at current mouse position
 	p:Cursor()
-	
+
 	-- Renders all the queued draw commands
 	p:Render(Vector(980, -83, -79), Angle(0, 0, 0), 0.4)
 end)
@@ -58,6 +58,14 @@ p:Text(text, font, x, y, [color], [halign], [valign], [scissor_rect])
 
 local isMouseOrUseDown = p:Button(text, font, x, y, w, h, [color])
 
+-- You can pass normal GMod fonts to the font parameter of p:Text and p:Button
+-- but it also accepts some special formats that you can use:
+
+p:Text("Hello world", "!Roboto@18", 0, 0)
+-- This kind of syntax automatically creates and caches a font based on "Roboto"
+-- typeface at size 18. The caching is pretty efficient so this can be used even
+-- in finished projects, not just during development.
+
 p:Cursor()
 ```
 
@@ -80,4 +88,4 @@ Don't be afraid to use the y-axis as the horizontal center point. 3D2D-IMGUI sup
 
 Do figure out how to use non-queued mode (ie. initiating render context manually using ```tdui:BeginRender()``` and ```tdui:EndRender()```, and using ```tdui:Draw[ComponentName]()``` for drawing components), if you need the extra performance.
 
-If you need to make eg. scrolling text, ```p:Text()``` accepts ```scissor_rect``` as the last parameter. It should be a table containing ```x, y, x2, y2```. 
+If you need to make eg. scrolling text, ```p:Text()``` accepts ```scissor_rect``` as the last parameter. It should be a table containing ```x, y, x2, y2```.
