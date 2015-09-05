@@ -172,16 +172,18 @@ function tdui_meta:Polygon(verts, clr, mat)
 	self:_QueueRenderOP("polygon", verts, clr, mat)
 end
 
-function tdui_meta:DrawMat(mat, x, y, w, h)
+function tdui_meta:DrawMat(mat, x, y, w, h, clr)
+	clr = clr or tdui.COLOR_WHITE
+
 	surface.SetMaterial(mat)
-	surface.SetDrawColor(tdui.COLOR_WHITE)
+	surface.SetDrawColor(clr)
 	surface.DrawTexturedRect(x, y, w, h)
 
 	self:_ExpandRenderBounds(x, y, w, h)
 end
 tdui.RenderOperations["mat"] = tdui_meta.DrawMat
-function tdui_meta:Mat(mat, x, y, w, h)
-	self:_QueueRenderOP("mat", mat, x, y, w, h)
+function tdui_meta:Mat(mat, x, y, w, h, clr)
+	self:_QueueRenderOP("mat", mat, x, y, w, h, clr)
 end
 
 function tdui_meta:DrawText(str, font, x, y, clr, halign, valign, scissor_rect)
