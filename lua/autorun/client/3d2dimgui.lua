@@ -25,6 +25,7 @@
 -- Localize globals
 local bor, band, lshift = bit.bor, bit.band, bit.lshift
 
+local old_tdui = tdui -- autorefresh support
 tdui = {}
 
 -- Input constants.
@@ -81,10 +82,14 @@ function tdui.Create()
 	return setmetatable({}, tdui.Meta)
 end
 
-local tdui_meta = {}
-tdui_meta.__index = tdui_meta
+-- This is accessed so often we can improve performance by making it local
+local TDUI_DEFAULT_SKIN
 
-tdui.Meta = tdui_meta
+tdui.Skins = (old_tdui and old_tdui.Skins) or {}
+function tdui.RegisterSkin(name, tbl)
+	tdui.Skins[name] = tbl
+	if name == "default" then TDUI_DEFAULT_SKIN = tbl end
+end
 
 tdui.RenderOperations = {
 	["stencil_rect"] = function(_self, x, y, w, h)
@@ -113,6 +118,35 @@ tdui.RenderOperations = {
 	end
 }
 
+local tdui_meta = {}
+tdui_meta.__index = tdui_meta
+tdui.Meta = tdui_meta
+
+function tdui_meta:SetSkin(skin)
+	self._skin = skin
+	self._skinobj = tdui.Skins[skin]
+end
+function tdui_meta:GetSkin()
+	return self._skin
+end
+
+function tdui_meta:_GetSkinParams(type, ...)
+	local defskin = TDUI_DEFAULT_SKIN
+	local skin = self._skinobj or defskin
+
+	local deftbl = defskin[type]
+	if not deftbl then return end
+
+	local tbl = skin[type] or deftbl
+
+	local x = {}
+	for k,v in pairs{...} do
+		x[k] = tbl[v] or deftbl[v]
+	end
+
+	return unpack(x)
+end
+
 function tdui_meta:EnableRectStencil(x, y, w, h)
 	self:_QueueRenderOP("stencil_rect", x, y, w, h)
 end
@@ -122,7 +156,10 @@ function tdui_meta:DisableStencil()
 end
 
 function tdui_meta:DrawRect(x, y, w, h, clr, out_clr)
-	clr = clr or tdui.COLOR_WHITE_TRANSLUCENT
+	local color, borderColor = self:_GetSkinParams("rect", "color", "borderColor")
+
+	clr = clr or color
+	out_clr = out_clr or borderColor
 
 	surface.SetDrawColor(clr)
 	surface.DrawRect(x, y, w, h)
@@ -140,7 +177,8 @@ function tdui_meta:Rect(x, y, w, h, clr, out_clr)
 end
 
 function tdui_meta:DrawLine(x, y, x2, y2, clr)
-	clr = clr or tdui.COLOR_WHITE
+	local color = self:_GetSkinParams("line", "color")
+	clr = clr or color
 
 	surface.SetDrawColor(clr)
 	surface.DrawLine(x, y, x2, y2)
@@ -155,7 +193,8 @@ function tdui_meta:Line(x, y, x2, y2, clr)
 end
 
 function tdui_meta:DrawPolygon(verts, clr, mat)
-	clr = clr or tdui.COLOR_WHITE_TRANSLUCENT
+	local color = self:_GetSkinParams("polygon", "color")
+	clr = clr or color
 
 	surface.SetDrawColor(clr)
 
@@ -187,7 +226,8 @@ function tdui_meta:Mat(mat, x, y, w, h, clr)
 end
 
 function tdui_meta:DrawText(str, font, x, y, clr, halign, valign, scissor_rect)
-	clr = clr or tdui.COLOR_WHITE
+	local color = self:_GetSkinParams("text", "color")
+	clr = clr or color or tdui.COLOR_WHITE
 
 	surface.SetFont(font)
 	surface.SetTextColor(clr)
@@ -226,8 +266,12 @@ function tdui_meta:Text(str, font, x, y, clr, halign, valign, scissor_rect)
 end
 
 function tdui_meta:DrawButton(str, font, x, y, w, h, clr, hover_clr)
-	clr = clr or tdui.COLOR_WHITE
-	hover_clr = hover_clr or tdui.COLOR_ORANGE
+	local fgColor, bgColor, fgHoverColor, fgPressColor, bgHoverColor, bgPressColor =
+		self:_GetSkinParams("button", "fgColor", "bgColor", "fgHoverColor", "fgPressColor", "bgHoverColor", "bgPressColor")
+
+	-- Override skin constants with params if needed
+	fgColor = clr or fgColor
+	fgHoverColor = hover_clr or fgHoverColor
 
 	surface.SetFont(font)
 
@@ -237,14 +281,16 @@ function tdui_meta:DrawButton(str, font, x, y, w, h, clr, hover_clr)
 	local pressing = band(inputstate, tdui.FSTATE_PRESSING) ~= 0
 	local hovering = band(inputstate, tdui.FSTATE_HOVERING) ~= 0
 
+	local finalFgColor, finalBgColor = fgColor, bgColor
+
 	if just_pressed or pressing then
-		clr = tdui.COLOR_ORANGE_DARK
+		finalFgColor, finalBgColor = fgPressColor, bgPressColor
 	elseif hovering then
-		clr = hover_clr
+		finalFgColor, finalBgColor = fgHoverColor, bgHoverColor
 	end
 
-	self:DrawText(str, font, x + w / 2, y + h / 2, clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-	self:DrawRect(x, y, w, h, tdui.COLOR_BLACK_TRANSPARENT, clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	self:DrawRect(x, y, w, h, finalBgColor, finalFgColor)
+	self:DrawText(str, font, x + w / 2, y + h / 2, finalFgColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
 	self:_ExpandRenderBounds(x, y, w, h)
 
@@ -284,12 +330,13 @@ function tdui_meta:DrawCursor()
 		return
 	end
 
+	local color, hoverColor, pressColor = self:_GetSkinParams("cursor", "color", "hoverColor", "pressColor")
 	if band(inputstate, tdui.FSTATE_JUSTPRESSED) ~= 0 then
-		surface.SetDrawColor(tdui.COLOR_RED)
+		surface.SetDrawColor(hoverColor)
 	elseif band(inputstate, tdui.FSTATE_PRESSING) ~= 0 then
-		surface.SetDrawColor(tdui.COLOR_ORANGE)
+		surface.SetDrawColor(pressColor)
 	else
-		surface.SetDrawColor(tdui.COLOR_WHITE)
+		surface.SetDrawColor(color)
 	end
 
 	surface.DrawLine(self._mx - 2, self._my, self._mx + 2, self._my)
@@ -690,3 +737,34 @@ tdui.SetIgnoreZ  = curry(singleton.SetIgnoreZ, singleton)
 function tdui.End()
 	singleton:EndRender()
 end
+
+-- Register default skin
+tdui.RegisterSkin("default", {
+	rect = {
+		color = tdui.COLOR_WHITE_TRANSLUCENT,
+		borderColor = nil
+	},
+	text = {
+		color = tdui.COLOR_WHITE
+	},
+	line = {
+		color = tdui.COLOR_WHITE
+	},
+	polygon = {
+		color = tdui.COLOR_WHITE_TRANSLUCENT
+	},
+	button = {
+		fgColor = tdui.COLOR_WHITE,
+		fgHoverColor = tdui.COLOR_ORANGE,
+		fgPressColor = tdui.COLOR_ORANGE_DARK,
+
+		bgColor = tdui.COLOR_BLACK_TRANSPARENT,
+		bgHoverColor = tdui.COLOR_BLACK_TRANSPARENT,
+		bgPressColor = tdui.COLOR_BLACK_TRANSPARENT,
+	},
+	cursor = {
+		color = tdui.COLOR_WHITE,
+		hoverColor = tdui.COLOR_RED,
+		pressColor = tdui.COLOR_ORANGE
+	}
+})
