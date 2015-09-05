@@ -304,7 +304,7 @@ function tdui_meta:Text(str, font, x, y, clr, halign, valign, scissor_rect)
 	self:_QueueRenderOP("text", str, font, x, y, clr, halign, valign, scissor_rect)
 end
 
-function tdui_meta:DrawButton(str, font, x, y, w, h, clr, hover_clr)
+function tdui_meta:DrawButton(input, font, x, y, w, h, clr, hover_clr)
 	local fgColor, bgColor, fgHoverColor, fgPressColor, bgHoverColor, bgPressColor =
 		self:_GetSkinParams("button", "fgColor", "bgColor", "fgHoverColor", "fgPressColor", "bgHoverColor", "bgPressColor")
 
@@ -330,7 +330,45 @@ function tdui_meta:DrawButton(str, font, x, y, w, h, clr, hover_clr)
 	end
 
 	self:DrawRect(x, y, w, h, finalBgColor, finalFgColor)
-	self:DrawText(str, font, x + w / 2, y + h / 2, finalFgColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+
+	-- if it's a table we need ITERATION
+	if type(input) == "table" then
+		local uiscale = self:GetUIScale()
+		local padding = 3
+
+		local in_w = -padding -- one instance of padding needs to be subtracted, we do it here
+		for k,v in pairs(input) do
+			local size
+			if type(v) == "IMaterial" then
+				size = v:Width() * uiscale
+			elseif type(v) == "table" and v.mat then
+				size = (v.width or v.mat:Width()) * uiscale * 0.5
+			else
+				size = surface.GetTextSize(v)
+			end
+
+			in_w = in_w + (size + padding)
+		end
+
+		local in_x = -in_w / 2
+		for k,v in pairs(input) do
+			local size
+			if type(v) == "IMaterial" then
+				self:DrawMat(v, x + w / 2 + in_x, y + h / 2 - v:Height() / 2, v:Width(), v:Height())
+				size = v:Width() * uiscale
+			elseif type(v) == "table" and v.mat then
+				local matw, math = v.width or v.mat:Width(), v.height or v.mat:Height()
+				self:DrawMat(v.mat, x + w / 2 + in_x, y + h / 2 - math / 2, matw, math)
+				size = (v.width or v.mat:Width()) * uiscale
+			else
+				self:DrawText(v, font, x + w / 2 + in_x, y + h / 2, finalFgColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+				size = surface.GetTextSize(v)
+			end
+			in_x = in_x + (size + padding)
+		end
+	else
+		self:DrawText(input, font, x + w / 2, y + h / 2, finalFgColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	end
 
 	if not self:ShouldAcceptInput() then
 		return false, false, false
@@ -356,7 +394,6 @@ function tdui_meta:Button(str, font, x, y, w, h, clr, hover_clr)
 
 	return just_pressed, pressing, hovering
 end
-
 
 function tdui_meta:DrawCursor()
 	local rb = self._renderBounds
