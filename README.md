@@ -7,30 +7,30 @@
 ```lua
 local p
 hook.Add("PostDrawTranslucentRenderables", "Paint3D2DUI", function()
-	-- Create a 3D2D-IMGUI instance and cache it
-	-- Note: if drawing TDUI inside a ENT:Draw(), you should cache the
-	--       panel to the entity instance (self) instead of a local variable.
-	--       That way there will be one panel per entity.
-	p = p or tdui.Create()
+    -- Create a 3D2D-IMGUI instance and cache it
+    -- Note: if drawing TDUI inside a ENT:Draw(), you should cache the
+    --       panel to the entity instance (self) instead of a local variable.
+    --       That way there will be one panel per entity.
+    p = p or tdui.Create()
 
-	-- Draw a rectangle (x, y, w, h, [fill_color], [outline_color])
-	p:Rect(-80, 0, 160, 150, _, Color(255, 255, 255))
+    -- Draw a rectangle (x, y, w, h, [fill_color], [outline_color])
+    p:Rect(-320, 0, 640, 600, _, Color(255, 255, 255))
 
-	-- Draw a line of text (text, font, x, y, [color], [halign], [valign])
-	-- Note: text is implicitly horizontally centered
-	p:Text("Hello there!", "DermaLarge", 0, 5)
+    -- Draw a line of text (text, font, x, y, [color], [halign], [valign])
+    -- Note: text is implicitly horizontally centered
+    p:Text("Hello there!", "!Roboto@100", 0, 20)
 
-	-- Draw a button (text, font, x, y, w, h, [color])
-	-- Return value is boolean indicating whether left mouse or +use was pressed during this frame
-	if p:Button("Say hi", "DermaDefaultBold", -50, 40, 100, 25) then
-		RunConsoleCommand("say", "hi!")
-	end
+    -- Draw a button (text, font, x, y, w, h, [color])
+    -- Return value is boolean indicating whether left mouse or +use was pressed during this frame
+    if p:Button("Say hi", "DermaLarge", -200, 160, 400, 100) then
+        RunConsoleCommand("say", "hi!")
+    end
 
-	-- Draws a simple crosshair cursor at current mouse position
-	p:Cursor()
+    -- Draws a simple crosshair cursor at current mouse position
+    p:Cursor()
 
-	-- Renders all the queued draw commands
-	p:Render(Vector(980, -83, -79), Angle(0, 0, 0), 0.4)
+    -- Renders all the queued draw commands at given 3D location (this one's near gm_construct wall)
+    p:Render(Vector(980, -83, -79), Angle(0, 0, 0), 0.1)
 end)
 ```
 
@@ -71,7 +71,13 @@ p:Cursor()
 
 Configuration:
 ```lua
-p:SetIgnoreZ(true) -- Draws and accepts input through walls
+-- Draws and accepts input through walls
+p:SetIgnoreZ(true)
+
+-- Scales (multiplies) all UI elements by this value. This can be used during development
+-- to test different UI scales or if you're lazy and don't want to scale values by hand.
+-- This method also scales fonts that use the special !Typeface@Size format
+p:SetUIScale(10)
 ```
 
 Rendering (should be called in same drawing hook as drawing components):
@@ -84,8 +90,8 @@ Code is mostly self-documenting. If there's a part you don't understand, feel fr
 
 Cache the panel. Use a local variable for hooks and ```self.Panel = self.Panel or tdui.CreatePanel()``` for ```ENT:Draw()```.
 
-Don't be afraid to use the y-axis as the horizontal center point. 3D2D-IMGUI supports negative coordinates and the example uses them.
+Make the ```scale``` parameter to ```p:Render``` as small as possible (eg. ```0.1```) and compensate by either scaling UI elements manually or by using ```p:SetUIScale```. This makes the elements look sharper.
 
-Do figure out how to use non-queued mode (ie. initiating render context manually using ```tdui:BeginRender()``` and ```tdui:EndRender()```, and using ```tdui:Draw[ComponentName]()``` for drawing components), if you need the extra performance.
+Don't be afraid to use the y-axis as the horizontal center point. 3D2D-IMGUI supports negative coordinates and the example uses them.
 
 If you need to make eg. scrolling text, ```p:Text()``` accepts ```scissor_rect``` as the last parameter. It should be a table containing ```x, y, x2, y2```.

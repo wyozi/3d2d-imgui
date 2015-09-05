@@ -161,6 +161,9 @@ function tdui_meta:DrawRect(x, y, w, h, clr, out_clr)
 	clr = clr or color
 	out_clr = out_clr or borderColor
 
+	local uiscale = self:GetUIScale()
+	x, y, w, h = x * uiscale, y * uiscale, w * uiscale, h * uiscale
+
 	surface.SetDrawColor(clr)
 	surface.DrawRect(x, y, w, h)
 
@@ -179,6 +182,9 @@ end
 function tdui_meta:DrawLine(x, y, x2, y2, clr)
 	local color = self:_GetSkinParams("line", "color")
 	clr = clr or color
+
+	local uiscale = self:GetUIScale()
+	x, y, x2, y2 = x * uiscale, y * uiscale, x2 * uiscale, y2 * uiscale
 
 	surface.SetDrawColor(clr)
 	surface.DrawLine(x, y, x2, y2)
@@ -214,6 +220,9 @@ end
 function tdui_meta:DrawMat(mat, x, y, w, h, clr)
 	clr = clr or tdui.COLOR_WHITE
 
+	local uiscale = self:GetUIScale()
+	x, y, w, h = x * uiscale, y * uiscale, w * uiscale, h * uiscale
+
 	surface.SetMaterial(mat)
 	surface.SetDrawColor(clr)
 	surface.DrawTexturedRect(x, y, w, h)
@@ -237,6 +246,9 @@ function tdui_meta:_ParseFont(font)
 		local name, size = font:match("!([^@]+)@(.+)")
 		local parsedSize = tonumber(size)
 
+		local uiscale = self:GetUIScale()
+		parsedSize = math.Round(parsedSize * uiscale)
+
 		surface.CreateFont(cachedName, {
 			font = name,
 			size = parsedSize
@@ -251,6 +263,9 @@ end
 function tdui_meta:DrawText(str, font, x, y, clr, halign, valign, scissor_rect)
 	local color = self:_GetSkinParams("text", "color")
 	clr = clr or color or tdui.COLOR_WHITE
+
+	local uiscale = self:GetUIScale()
+	x, y = x * uiscale, y * uiscale
 
 	surface.SetFont(self:_ParseFont(font))
 	surface.SetTextColor(clr)
@@ -298,7 +313,8 @@ function tdui_meta:DrawButton(str, font, x, y, w, h, clr, hover_clr)
 
 	surface.SetFont(self:_ParseFont(font))
 
-	local inputstate = self:_CheckInputInRect(x, y, w, h)
+	local uiscale = self:GetUIScale()
+	local inputstate = self:_CheckInputInRect(x * uiscale, y * uiscale, w * uiscale, h * uiscale)
 
 	local just_pressed = band(inputstate, tdui.FSTATE_JUSTPRESSED) ~= 0
 	local pressing = band(inputstate, tdui.FSTATE_PRESSING) ~= 0
@@ -315,8 +331,6 @@ function tdui_meta:DrawButton(str, font, x, y, w, h, clr, hover_clr)
 	self:DrawRect(x, y, w, h, finalBgColor, finalFgColor)
 	self:DrawText(str, font, x + w / 2, y + h / 2, finalFgColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
-	self:_ExpandRenderBounds(x, y, w, h)
-
 	if not self:ShouldAcceptInput() then
 		return false, false, false
 	end
@@ -329,7 +343,8 @@ function tdui_meta:Button(str, font, x, y, w, h, clr, hover_clr)
 	local just_pressed, pressing, hovering
 
 	if self:ShouldAcceptInput() then
-		local inputstate = self:_CheckInputInRect(x, y, w, h)
+		local uiscale = self:GetUIScale()
+		local inputstate = self:_CheckInputInRect(x * uiscale, y * uiscale, w * uiscale, h * uiscale)
 
 		just_pressed = band(inputstate, tdui.FSTATE_JUSTPRESSED) ~= 0
 		pressing = band(inputstate, tdui.FSTATE_PRESSING) ~= 0
@@ -362,8 +377,10 @@ function tdui_meta:DrawCursor()
 		surface.SetDrawColor(color)
 	end
 
-	surface.DrawLine(self._mx - 2, self._my, self._mx + 2, self._my)
-	surface.DrawLine(self._mx, self._my - 2, self._mx, self._my + 2)
+	local cursorSize = math.Round(2 * self:GetUIScale())
+
+	surface.DrawLine(self._mx - cursorSize, self._my, self._mx + cursorSize, self._my)
+	surface.DrawLine(self._mx, self._my - cursorSize, self._mx, self._my + cursorSize)
 end
 tdui.RenderOperations["cursor"] = tdui_meta.DrawCursor
 function tdui_meta:Cursor()
@@ -720,6 +737,16 @@ end
 -- Note: does not affect return values from CheckInputInRect
 function tdui_meta:ShouldAcceptInput()
 	return self:IsFirstRenderThisFrame()
+end
+
+-- Scales all UI elements (including fonts that use custom format)
+-- Behind the scenes this scales all x, y, w, h etc by this value
+-- Can be used for testing or because of laziness
+function tdui_meta:SetUIScale(scale)
+	self._uiscale = scale
+end
+function tdui_meta:GetUIScale()
+	return self._uiscale or 1
 end
 
 -- Create singleton instance of TDUI
