@@ -239,24 +239,23 @@ end
 function tdui_meta:_ParseFont(font)
 	-- special font
 	if font:sub(1, 1) == "!" then
-		local cachedName = "TDUICached_" .. font
-
-		self._cachedFonts = self._cachedFonts or {}
-		local cached = self._cachedFonts[font]
-		if cached then return cached end
-
 		local name, size = font:match("!([^@]+)@(.+)")
 		local parsedSize = tonumber(size)
 
 		local uiscale = self:GetUIScale()
 		parsedSize = math.Round(parsedSize * uiscale)
 
+		local cachedName = string.format("TDUICached_%s_%d", name, parsedSize)
+
+		self._cachedFonts = self._cachedFonts or {}
+		if self._cachedFonts[cachedName] then return cachedName end
+
 		surface.CreateFont(cachedName, {
 			font = name,
 			size = parsedSize
 		})
 
-		self._cachedFonts[font] = cachedName
+		self._cachedFonts[cachedName] = true
 		return cachedName
 	end
 	return font
