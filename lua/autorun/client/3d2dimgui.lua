@@ -87,7 +87,7 @@ tdui_meta.__index = tdui_meta
 tdui.Meta = tdui_meta
 
 tdui.RenderOperations = {
-	["stencil_rect"] = function(self, x, y, w, h)
+	["stencil_rect"] = function(_self, x, y, w, h)
 		render.ClearStencil()
 		render.SetStencilEnable(true)
 		render.SetStencilCompareFunction(STENCIL_ALWAYS)
@@ -146,7 +146,7 @@ function tdui_meta:DrawLine(x, y, x2, y2, clr)
 	surface.DrawLine(x, y, x2, y2)
 
 	local bx, by = math.min(x, x2), math.min(y, y2)
-	local bw, bh = math.max(x, x2)-bx, math.max(y, y2)-by
+	local bw, bh = math.max(x, x2) - bx, math.max(y, y2) - by
 	self:_ExpandRenderBounds(bx, by, bw, bh)
 end
 tdui.RenderOperations["line"] = tdui_meta.DrawLine
@@ -193,15 +193,15 @@ function tdui_meta:DrawText(str, font, x, y, clr, halign, valign, scissor_rect)
 	local tw, th = surface.GetTextSize(str)
 
 	-- Horizontal align default: TEXT_ALIGN_CENTER
-	local aligned_x = x-tw/2
+	local aligned_x = x - tw / 2
 	if     halign == TEXT_ALIGN_LEFT then    aligned_x = x
-	elseif halign == TEXT_ALIGN_RIGHT then   aligned_x = x-tw
+	elseif halign == TEXT_ALIGN_RIGHT then   aligned_x = x - tw
 	end
 
 	-- Vertical align default: TEXT_ALIGN_TOP
 	local aligned_y = y
-	if     valign == TEXT_ALIGN_CENTER then  aligned_y = y-th/2
-	elseif valign == TEXT_ALIGN_BOTTOM then  aligned_y = y-th
+	if     valign == TEXT_ALIGN_CENTER then  aligned_y = y - th / 2
+	elseif valign == TEXT_ALIGN_BOTTOM then  aligned_y = y - th
 	end
 
 	surface.SetTextPos(aligned_x, aligned_y)
@@ -241,7 +241,7 @@ function tdui_meta:DrawButton(str, font, x, y, w, h, clr, hover_clr)
 		clr = hover_clr
 	end
 
-	self:DrawText(str, font, x + w/2, y + h/2, clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	self:DrawText(str, font, x + w / 2, y + h / 2, clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	self:DrawRect(x, y, w, h, tdui.COLOR_BLACK_TRANSPARENT, clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
 	self:_ExpandRenderBounds(x, y, w, h)
@@ -290,8 +290,8 @@ function tdui_meta:DrawCursor()
 		surface.SetDrawColor(tdui.COLOR_WHITE)
 	end
 
-	surface.DrawLine(self._mx-2, self._my, self._mx+2, self._my)
-	surface.DrawLine(self._mx, self._my-2, self._mx, self._my+2)
+	surface.DrawLine(self._mx - 2, self._my, self._mx + 2, self._my)
+	surface.DrawLine(self._mx, self._my - 2, self._mx, self._my + 2)
 end
 tdui.RenderOperations["cursor"] = tdui_meta.DrawCursor
 function tdui_meta:Cursor()
@@ -310,7 +310,7 @@ function tdui_meta:_QueueRender(fn)
 	end
 
 	self.renderQueue = self.renderQueue or {}
-	self.renderQueue[#self.renderQueue+1] = fn
+	self.renderQueue[#self.renderQueue + 1] = fn
 end
 
 -- Queues a render operation to be done during next render pass
@@ -328,7 +328,7 @@ function tdui_meta:_QueueRenderOP(op, ...)
 	end
 
 	self.renderQueue = self.renderQueue or {}
-	self.renderQueue[#self.renderQueue+1] = {fn, ...}
+	self.renderQueue[#self.renderQueue + 1] = {fn, ...}
 end
 
 --- Should be called every time something is drawn with an approximate bounding
@@ -337,8 +337,8 @@ function tdui_meta:_ExpandRenderBounds(x, y, w, h)
 	self._renderBounds.x = math.min(self._renderBounds.x, x)
 	self._renderBounds.y = math.min(self._renderBounds.y, y)
 
-	self._renderBounds.x2 = math.max(self._renderBounds.x2, x+w)
-	self._renderBounds.y2 = math.max(self._renderBounds.y2, y+h)
+	self._renderBounds.x2 = math.max(self._renderBounds.x2, x + w)
+	self._renderBounds.y2 = math.max(self._renderBounds.y2, y + h)
 end
 
 function tdui_meta:_WorldToLocal(rayOrigin, rayDirection)
@@ -372,7 +372,7 @@ function tdui_meta:_CheckInputInRect(x, y, w, h, input)
 		return state
 	end
 
-	if self._mx >= x and self._my >= y and self._mx <= (x+w) and self._my <= (y+h) then
+	if self._mx >= x and self._my >= y and self._mx <= (x + w) and self._my <= (y + h) then
 		state = bor(state, tdui.FSTATE_HOVERING)
 
 		if band(self._justPressed, input) ~= 0 then
@@ -393,7 +393,7 @@ local traceEntFilter = function(ent)
 end
 function tdui_meta:_ComputeScreenMouse()
 	local eyepos = LocalPlayer():EyePos()
-	local eyenormal = gui.ScreenToVector(ScrW()/2, ScrH()/2)
+	local eyenormal = gui.ScreenToVector(ScrW() / 2, ScrH() / 2)
 
 	-- Calculate mouse position in local space
 	local mx, my, hitPos = self:_WorldToLocal(eyepos, eyenormal)
@@ -589,7 +589,7 @@ function tdui_meta:EndRender()
 end
 
 function tdui_meta:RenderQueued()
-	for i=1, #self.renderQueue do
+	for i = 1, #self.renderQueue do
 		local fn = self.renderQueue[i]
 
 		local r, e
