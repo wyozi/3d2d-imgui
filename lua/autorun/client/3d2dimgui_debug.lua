@@ -29,7 +29,7 @@ hook.Add("HUDPaint", "TDUI_Debugger", function()
 
 		if v._renderStarted and v._renderEnded then
 			local renderTime = (v._renderEnded - v._renderStarted) * 1000
-			t[4] = {txt = string.format("rendering took %.03f ms (%.02f%%)", renderTime, renderTime / (FrameTime()*1000))}
+			t[4] = {txt = string.format("rendering took %.03f ms (%.02f%%)", renderTime, (renderTime / (FrameTime()*1000))*100)}
 		end
 
 		local x = 10
