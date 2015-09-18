@@ -519,8 +519,9 @@ local traceEntFilter = function(ent)
 	end
 end
 function tdui_meta:_ComputeScreenMouse()
-	local eyepos = LocalPlayer():EyePos()
-	local eyenormal = gui.ScreenToVector(ScrW() / 2, ScrH() / 2)
+	local tr = LocalPlayer():GetEyeTrace()
+	local eyepos = tr.StartPos
+	local eyenormal = tr.Normal
 
 	-- Calculate mouse position in local space
 	local mx, my, hitPos = self:_WorldToLocal(eyepos, eyenormal)
@@ -577,7 +578,7 @@ function tdui_meta:_ComputeInput()
 		end
 	end
 	local function CheckMouse(gm_code, code)
-		CheckInput(code, input.IsMouseDown(gm_code) and not vgui.CursorVisible())
+		CheckInput(code, input.IsMouseDown(gm_code) and (not vgui.CursorVisible() or vgui.GetHoveredPanel() == g_ContextMenu))
 	end
 	local function CheckInKey(gm_code, code)
 		CheckInput(code, LocalPlayer():KeyDown(gm_code))
