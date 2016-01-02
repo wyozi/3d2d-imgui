@@ -157,7 +157,7 @@ function tdui_meta:DisableStencil()
 	self:_QueueRenderOP("stencil_off")
 end
 
-local line_tex = Material("trails/laser")
+local line_tex = CreateMaterial("idgafjustworkplease", "UnlitGeneric", { ["$basetexture"] = "models/debug/debugwhite" })
 function tdui_meta:DrawRect(x, y, w, h, clr, out_clr)
 	local color, borderColor = self:_GetSkinParams("rect", "color", "borderColor")
 
@@ -172,7 +172,8 @@ function tdui_meta:DrawRect(x, y, w, h, clr, out_clr)
 
 	if out_clr then
 		surface.SetDrawColor(out_clr)
-		local line_width = math.ceil(1 / (self._scale * 7))
+		surface.SetMaterial(line_tex)
+		local line_width = math.ceil(1 / (self._scale * 12))
 
 		surface.DrawTexturedRect(x, y, w, line_width)
 		surface.DrawTexturedRect(x, y, line_width, h)
