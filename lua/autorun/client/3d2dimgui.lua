@@ -26,7 +26,7 @@
 local bor, band, lshift = bit.bor, bit.band, bit.lshift
 
 local old_tdui = tdui -- autorefresh support
-tdui = {}
+local tdui = {}
 
 -- Input constants.
 -- We're not using GMod- versions, because they're not powers of two.
@@ -877,3 +877,5 @@ tdui.RegisterSkin("default", {
 		pressColor = tdui.COLOR_ORANGE
 	}
 })
+
+return tdui

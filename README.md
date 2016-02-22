@@ -5,6 +5,8 @@
 ![example](http://i.imgur.com/dhjqFZD.jpg)
 
 ```lua
+local tdui = include("tdui.lua") -- tdui.lua should be in same folder and AddCSLuaFile'd
+
 local p
 hook.Add("PostDrawTranslucentRenderables", "Paint3D2DUI", function()
     -- Create a 3D2D-IMGUI instance and cache it
@@ -35,8 +37,8 @@ end)
 ```
 
 ## Installation
-__As a library to a project:__ copy [lua/autorun/client/3d2dimgui.lua](../blob/master/lua/autorun/client/3d2dimgui.lua) and remember to include/AddCSLuaFile it on clientside.  
-__As a generic addon:__ ```git clone https://github.com/wyozi/3d2d-imgui.git``` in the ```garrysmod/addons``` folder.
+Copy [lua/autorun/client/3d2dimgui.lua](../blob/master/lua/autorun/client/3d2dimgui.lua) into a folder and remember to AddCSLuaFile it.
+Try to avoid `lua/autorun/client` folder. Instead prefer eg. `lua/myaddon/tdui.lua`.
 
 ## Usage
 Panel creation (should be called only once):
