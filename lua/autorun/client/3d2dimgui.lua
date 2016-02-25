@@ -456,7 +456,7 @@ function tdui_meta:_QueueRenderOP(op, ...)
 	end
 
 	if self._rendering then
-		local r, e = pcall(fn, self)
+		local r, e = pcall(fn, self, ...)
 		if not r then print("TDUI rendering error: ", e) end
 		return
 	end
