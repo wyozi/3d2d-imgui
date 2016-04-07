@@ -321,12 +321,7 @@ function tdui_meta:DrawButton(input, font, x, y, w, h, clr, hover_clr)
 
 	surface.SetFont(self:_ParseFont(font))
 
-	local uiscale = self:GetUIScale()
-	local inputstate = self:_CheckInputInRect(x * uiscale, y * uiscale, w * uiscale, h * uiscale)
-
-	local just_pressed = band(inputstate, tdui.FSTATE_JUSTPRESSED) ~= 0
-	local pressing = band(inputstate, tdui.FSTATE_PRESSING) ~= 0
-	local hovering = band(inputstate, tdui.FSTATE_HOVERING) ~= 0
+	local just_pressed, pressing, hovering = self:TestAreaInput(x, y, w, h, true)
 
 	local finalFgColor, finalBgColor = fgColor, bgColor
 
@@ -385,21 +380,7 @@ end
 tdui.RenderOperations["button"] = tdui_meta.DrawButton
 function tdui_meta:Button(str, font, x, y, w, h, clr, hover_clr)
 	self:_QueueRenderOP("button", str, font, x, y, w, h, clr, hover_clr)
-
-	local just_pressed, pressing, hovering
-
-	if self:ShouldAcceptInput() then
-		local uiscale = self:GetUIScale()
-		local inputstate = self:_CheckInputInRect(x * uiscale, y * uiscale, w * uiscale, h * uiscale)
-
-		just_pressed = band(inputstate, tdui.FSTATE_JUSTPRESSED) ~= 0
-		pressing = band(inputstate, tdui.FSTATE_PRESSING) ~= 0
-		hovering = band(inputstate, tdui.FSTATE_HOVERING) ~= 0
-	else
-		just_pressed, pressing, hovering = false, false, false
-	end
-
-	return just_pressed, pressing, hovering
+	return self:TestAreaInput(x, y, w, h)
 end
 
 function tdui_meta:DrawCursor()
@@ -434,6 +415,23 @@ end
 
 function tdui_meta:Custom(fn)
 	self:_QueueRender(fn)
+end
+
+function tdui_meta:TestAreaInput(x, y, w, h, dontCheckAcceptance)
+	local just_pressed, pressing, hovering
+
+	if self:ShouldAcceptInput() or dontCheckAcceptance then
+		local uiscale = self:GetUIScale()
+		local inputstate = self:_CheckInputInRect(x * uiscale, y * uiscale, w * uiscale, h * uiscale)
+
+		just_pressed = band(inputstate, tdui.FSTATE_JUSTPRESSED) ~= 0
+		pressing = band(inputstate, tdui.FSTATE_PRESSING) ~= 0
+		hovering = band(inputstate, tdui.FSTATE_HOVERING) ~= 0
+	else
+		just_pressed, pressing, hovering = false, false, false
+	end
+
+	return just_pressed, pressing, hovering
 end
 
 function tdui_meta:_QueueRender(fn)
