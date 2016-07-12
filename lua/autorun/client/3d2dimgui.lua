@@ -622,7 +622,15 @@ function tdui_meta:_ComputeInput()
 		end
 	end
 
-	if LocalPlayer():KeyDown(IN_USE) then
+	local useKey = KEY_E
+
+	-- attempt to map to key player has bound for +use, but fall back to KEY_E
+	local useBoundKey = input.LookupBinding("+use")
+	if useBoundKey ~= "e" then
+		useKey = _G["KEY_" .. useBoundKey:upper()] or KEY_E
+	end
+
+	if input.IsKeyDown(useKey) then
 		local code = tdui.FKEY_USE
 
 		nowInput = bor(nowInput, code)
