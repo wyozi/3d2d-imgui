@@ -79,7 +79,10 @@ end
 
 -- The main function. See below for functions in tdui.Meta
 function tdui.Create()
-	local ui = setmetatable({}, tdui.Meta)
+	local ui = setmetatable({
+		renderQueue = {},
+		renderQueuePointer = 0
+	}, tdui.Meta)
 	hook.Call("TDUICreated", nil, ui)
 	return ui
 end
@@ -441,8 +444,8 @@ function tdui_meta:_QueueRender(fn)
 		return
 	end
 
-	self.renderQueue = self.renderQueue or {}
-	self.renderQueue[#self.renderQueue + 1] = fn
+	self.renderQueuePointer = self.renderQueuePointer + 1
+	self.renderQueue[self.renderQueuePointer] = fn
 end
 
 -- Queues a render operation to be done during next render pass
@@ -459,8 +462,8 @@ function tdui_meta:_QueueRenderOP(op, ...)
 		return
 	end
 
-	self.renderQueue = self.renderQueue or {}
-	self.renderQueue[#self.renderQueue + 1] = {fn, ...}
+	self.renderQueuePointer = self.renderQueuePointer + 1
+	self.renderQueue[self.renderQueuePointer] = {fn, ...}
 end
 
 --- Should be called every time something is drawn with an approximate bounding
@@ -523,6 +526,8 @@ local traceEntFilter = function(ent)
 		return true
 	end
 end
+local traceResultTable = {}
+local traceQueryTable = { filter = traceEntFilter, output = traceResultTable }
 function tdui_meta:_ComputeScreenMouse()
 	local eyepos, eyenormal
 	if IsValid(LocalPlayer():GetVehicle()) then
@@ -562,13 +567,11 @@ function tdui_meta:_ComputeScreenMouse()
 			return
 		end
 
-		local tr = util.TraceLine({
-			start = eyepos,
-			endpos = hitPos,
-
-			filter = traceEntFilter
-		})
-
+		local q = traceQueryTable
+		q.start = eyepos
+		q.endpos = hitPos
+		
+		local tr = util.TraceLine(q)
 		self._mObscured = tr.Hit
 	end
 end
@@ -579,26 +582,36 @@ function tdui_meta:_ComputeInput()
 	local nowInput = 0
 	local justPressed = 0
 
-	local function CheckInput(code, isDown)
-		if not isDown then return end
+	local isInContextMenu = vgui.CursorVisible() and vgui.GetHoveredPanel() ~= g_ContextMenu
+
+	-- Check mouse input (only listened to if context menu is not active)
+	if not isInContextMenu then
+		if input.IsMouseDown(MOUSE_LEFT) then
+			local code = tdui.FMOUSE_LEFT
+
+			nowInput = bor(nowInput, code)
+			if oldInput and band(oldInput, code) == 0 then
+				justPressed = bor(justPressed, code)
+			end
+		end
+		if input.IsMouseDown(MOUSE_RIGHT) then
+			local code = tdui.FMOUSE_RIGHT
+
+			nowInput = bor(nowInput, code)
+			if oldInput and band(oldInput, code) == 0 then
+				justPressed = bor(justPressed, code)
+			end
+		end
+	end
+
+	if LocalPlayer():KeyDown(IN_USE) then
+		local code = tdui.FKEY_USE
 
 		nowInput = bor(nowInput, code)
-
 		if oldInput and band(oldInput, code) == 0 then
 			justPressed = bor(justPressed, code)
 		end
 	end
-	local function CheckMouse(gm_code, code)
-		CheckInput(code, input.IsMouseDown(gm_code) and (not vgui.CursorVisible() or vgui.GetHoveredPanel() == g_ContextMenu))
-	end
-	local function CheckInKey(gm_code, code)
-		CheckInput(code, LocalPlayer():KeyDown(gm_code))
-	end
-
-	CheckMouse(MOUSE_LEFT, tdui.FMOUSE_LEFT)
-	CheckMouse(MOUSE_RIGHT, tdui.FMOUSE_RIGHT)
-
-	CheckInKey(IN_USE, tdui.FKEY_USE)
 
 	self._inputDown = nowInput
 	self._justPressed = justPressed
@@ -657,7 +670,6 @@ end
 
 function tdui_meta:PreRenderReset()
 	-- Reset parameters
-	self.renderQueue = self.renderQueue or {}
 	self:_UpdateInputStatus()
 
 	-- Reset render bounds
@@ -696,8 +708,8 @@ function tdui_meta:BeginRender()
 end
 
 function tdui_meta:PostRenderReset()
-	-- Reset parameters
-	table.Empty(self.renderQueue)
+	-- "Empty" renderQueue
+	self.renderQueuePointer = 0
 
 	-- Count how many renders have been done this frame
 	local curFrame = FrameNumber()
@@ -731,7 +743,7 @@ function tdui_meta:EndRender()
 end
 
 function tdui_meta:RenderQueued()
-	for i = 1, #self.renderQueue do
+	for i = 1, self.renderQueuePointer do
 		local fn = self.renderQueue[i]
 
 		local r, e
