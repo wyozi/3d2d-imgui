@@ -80,6 +80,12 @@ p:SetIgnoreZ(true)
 -- to test different UI scales or if you're lazy and don't want to scale values by hand.
 -- This method also scales fonts that use the special !Typeface@Size format
 p:SetUIScale(10)
+
+-- Adds this tdui to list of tduis that are checked when the player presses +use bind
+-- If said bind is pressed and user is hovering a TDUI on the list, the bind is blocked.
+-- This is useful for eg. TDUIs inside cars, so that player doesn't leave car upon pressing +use
+-- on tdui.
+p:BlockUseBind()
 ```
 
 Rendering (should be called in same drawing hook as drawing components):

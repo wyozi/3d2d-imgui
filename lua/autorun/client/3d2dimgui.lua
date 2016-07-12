@@ -83,6 +83,8 @@ function tdui.Create()
 		renderQueue = {},
 		renderQueuePointer = 0,
 
+		_renderBounds = {x = 0, y = 0, x2 = 0, y2 = 0},
+
 		specialFontCache = {} -- cache of fonts that specify font size etc
 	}, tdui.Meta)
 	hook.Call("TDUICreated", nil, ui)
@@ -404,10 +406,14 @@ function tdui_meta:Button(str, font, x, y, w, h, clr, hover_clr)
 	return self:TestAreaInput(x, y, w, h)
 end
 
-function tdui_meta:DrawCursor()
+-- Returns input state bitmap of input within currently active renderbounds
+function tdui_meta:GetInputStateWithinRenderBounds()
 	local rb = self._renderBounds
+	return self:_CheckInputInRect(rb.x, rb.y, rb.x2-rb.x, rb.y2-rb.y)
+end
 
-	local inputstate = self:_CheckInputInRect(rb.x, rb.y, rb.x2-rb.x, rb.y2-rb.y)
+function tdui_meta:DrawCursor()
+	local inputstate = self:GetInputStateWithinRenderBounds()
 
 	-- If cursor is not within render bounds at all (is not hovering it)
 	-- we should not draw a cursor
@@ -699,7 +705,6 @@ function tdui_meta:PreRenderReset()
 	self:_UpdateInputStatus()
 
 	-- Reset render bounds
-	self._renderBounds = self._renderBounds or {}
 	self._renderBounds.x = 0
 	self._renderBounds.y = 0
 	self._renderBounds.x2 = 0
@@ -843,6 +848,30 @@ function tdui_meta:SetUIScale(scale)
 end
 function tdui_meta:GetUIScale()
 	return self._uiscale or 1
+end
+
+local useBindChecks = setmetatable({}, {__mode = "k"})
+
+hook.Add("PlayerBindPress", "TDUI_BlockUseBindChecker", function(ply, bind, pressed)
+	if bind == "+use" then
+		for ui,b in pairs(useBindChecks) do
+			if b then
+				local inputstate = ui:GetInputStateWithinRenderBounds()
+
+				-- if hovering, block bind
+				if band(inputstate, tdui.FSTATE_HOVERING) ~= 0 then
+					return true
+				end
+			end
+		end
+	end
+end)
+
+-- Inserts current TDUI to list of TDUIs checked when player presses +use
+-- If the +use happened while hovering tdui, the bind is blocked
+-- This is useful to prevent eg. exiting from a car if trying to interact with TDUI inside a car
+function tdui_meta:BlockUseBind()
+	useBindChecks[self] = true
 end
 
 -- Create singleton instance of TDUI
