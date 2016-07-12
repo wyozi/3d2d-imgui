@@ -852,7 +852,7 @@ end
 
 local useBindChecks = setmetatable({}, {__mode = "k"})
 
-hook.Add("PlayerBindPress", "TDUI_BlockUseBindChecker", function(ply, bind, pressed)
+hook.Add("PlayerBindPress", "TDUI_BlockUseBindChecker" .. debug.getinfo(1, "S").short_src, function(ply, bind, pressed)
 	if bind == "+use" then
 		for ui,b in pairs(useBindChecks) do
 			if b then
