@@ -81,7 +81,9 @@ end
 function tdui.Create()
 	local ui = setmetatable({
 		renderQueue = {},
-		renderQueuePointer = 0
+		renderQueuePointer = 0,
+
+		specialFontCache = {} -- cache of fonts that specify font size etc
 	}, tdui.Meta)
 	hook.Call("TDUICreated", nil, ui)
 	return ui
@@ -246,27 +248,41 @@ function tdui_meta:Mat(mat, x, y, w, h, clr)
 	self:_QueueRenderOP("mat", mat, x, y, w, h, clr)
 end
 
+-- The cache that has String->Bool mappings telling if font has been created
+local _createdFonts = {}
+
+local EXCLAMATION_BYTE = string.byte("!")
 function tdui_meta:_ParseFont(font)
 	-- special font
-	if font:sub(1, 1) == "!" then
+	if font:byte(1) == EXCLAMATION_BYTE then
+		-- Check if font has been cached
+		-- This cache is cleared on UIScale change
+		local cachedFont = self.specialFontCache[font]
+		if cachedFont then
+			return cachedFont
+		end
+
+		-- Font not cached; parse the font and scale it according to UIScale
 		local name, size = font:match("!([^@]+)@(.+)")
 		local parsedSize = tonumber(size)
 
 		local uiscale = self:GetUIScale()
 		parsedSize = math.Round(parsedSize * uiscale)
 
-		local cachedName = string.format("TDUICached_%s_%d", name, parsedSize)
+		local fontName = string.format("TDUICached_%s_%d", name, parsedSize)
 
-		self._cachedFonts = self._cachedFonts or {}
-		if self._cachedFonts[cachedName] then return cachedName end
+		-- Cache for later usage with same font string
+		self.specialFontCache[font] = fontName
 
-		surface.CreateFont(cachedName, {
-			font = name,
-			size = parsedSize
-		})
+		if not _createdFonts[fontName] then
+			surface.CreateFont(fontName, {
+				font = name,
+				size = parsedSize
+			})
+			_createdFonts[fontName] = true
+		end
 
-		self._cachedFonts[cachedName] = true
-		return cachedName
+		return fontName
 	end
 	return font
 end
@@ -813,6 +829,7 @@ end
 -- Can be used for testing or because of laziness
 function tdui_meta:SetUIScale(scale)
 	self._uiscale = scale
+	self.specialFontCache = {} -- special font cache must be recreated
 end
 function tdui_meta:GetUIScale()
 	return self._uiscale or 1
