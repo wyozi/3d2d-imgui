@@ -163,22 +163,24 @@ function tdui_meta:DisableStencil()
 end
 
 local colorMat = Material("color")
-function tdui_meta:DrawRect(x, y, w, h, clr, out_clr)
-	local color, borderColor = self:_GetSkinParams("rect", "color", "borderColor")
+function tdui_meta:DrawRect(x, y, w, h, color, borderColor, borderWidth)
+	local skin_color, skin_borderColor, skin_borderWidth = self:_GetSkinParams("rect", "color", "borderColor", "borderWidth")
 
-	clr = clr or color
-	out_clr = out_clr or borderColor
+	color = color or skin_color
+	borderColor = borderColor or skin_borderColor
+	
+	borderWidth = borderWidth or skin_borderWidth or 1
 
 	local uiscale = self:GetUIScale()
 	x, y, w, h = x * uiscale, y * uiscale, w * uiscale, h * uiscale
 
-	surface.SetDrawColor(clr)
+	surface.SetDrawColor(color)
 	surface.DrawRect(x, y, w, h)
 
-	if out_clr then
-		surface.SetDrawColor(out_clr)
+	if borderColor then
+		surface.SetDrawColor(borderColor)
 		surface.SetMaterial(colorMat)
-		local line_width = math.ceil(1 / (self._scale * 12))
+		local line_width = borderWidth * math.ceil(1 / (self._scale * 40))
 
 		surface.DrawTexturedRect(x, y, w, line_width)
 		surface.DrawTexturedRect(x, y, line_width, h)
@@ -331,8 +333,8 @@ function tdui_meta:Text(str, font, x, y, clr, halign, valign, scissor_rect)
 end
 
 function tdui_meta:DrawButton(input, font, x, y, w, h, clr, hover_clr)
-	local fgColor, bgColor, fgHoverColor, fgPressColor, bgHoverColor, bgPressColor =
-		self:_GetSkinParams("button", "fgColor", "bgColor", "fgHoverColor", "fgPressColor", "bgHoverColor", "bgPressColor")
+	local fgColor, bgColor, fgHoverColor, fgPressColor, bgHoverColor, bgPressColor, borderWidth =
+		self:_GetSkinParams("button", "fgColor", "bgColor", "fgHoverColor", "fgPressColor", "bgHoverColor", "bgPressColor", "borderWidth")
 
 	-- Override skin constants with params if needed
 	fgColor = clr or fgColor
@@ -350,7 +352,7 @@ function tdui_meta:DrawButton(input, font, x, y, w, h, clr, hover_clr)
 		finalFgColor, finalBgColor = fgHoverColor, bgHoverColor
 	end
 
-	self:DrawRect(x, y, w, h, finalBgColor, finalFgColor)
+	self:DrawRect(x, y, w, h, finalBgColor, finalFgColor, borderWidth)
 
 	-- if it's a table we need ITERATION
 	if type(input) == "table" then
