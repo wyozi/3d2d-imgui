@@ -608,7 +608,7 @@ function tdui_meta:_ComputeInput()
 
 	local isInContextMenu = vgui.CursorVisible() and vgui.GetHoveredPanel() ~= g_ContextMenu
 
-	-- Check mouse input (only listened to if context menu is not active)
+	-- Check input (only checks if game panel is active)
 	if not isInContextMenu then
 		if input.IsMouseDown(MOUSE_LEFT) then
 			local code = tdui.FMOUSE_LEFT
@@ -626,22 +626,22 @@ function tdui_meta:_ComputeInput()
 				justPressed = bor(justPressed, code)
 			end
 		end
-	end
+		
+		local useKey = KEY_E
 
-	local useKey = KEY_E
+		-- attempt to map to key player has bound for +use, but fall back to KEY_E
+		local useBoundKey = input.LookupBinding("+use")
+		if useBoundKey ~= "e" then
+			useKey = _G["KEY_" .. useBoundKey:upper()] or KEY_E
+		end
 
-	-- attempt to map to key player has bound for +use, but fall back to KEY_E
-	local useBoundKey = input.LookupBinding("+use")
-	if useBoundKey ~= "e" then
-		useKey = _G["KEY_" .. useBoundKey:upper()] or KEY_E
-	end
+		if input.IsKeyDown(useKey) then
+			local code = tdui.FKEY_USE
 
-	if input.IsKeyDown(useKey) then
-		local code = tdui.FKEY_USE
-
-		nowInput = bor(nowInput, code)
-		if oldInput and band(oldInput, code) == 0 then
-			justPressed = bor(justPressed, code)
+			nowInput = bor(nowInput, code)
+			if oldInput and band(oldInput, code) == 0 then
+				justPressed = bor(justPressed, code)
+			end
 		end
 	end
 
