@@ -545,6 +545,10 @@ function tdui_meta:_CheckInputInRect(x, y, w, h, input)
 	return state
 end
 
+local function isInContextMenu()
+	return vgui.CursorVisible() and vgui.GetHoveredPanel() ~= g_ContextMenu
+end
+
 local traceEntFilter = function(ent)
 	if ent:GetClass() == "prop_physics" then
 		return true
@@ -554,9 +558,16 @@ local traceResultTable = {}
 local traceQueryTable = { filter = traceEntFilter, output = traceResultTable }
 function tdui_meta:_ComputeScreenMouse()
 	local eyepos, eyenormal
-	if IsValid(LocalPlayer():GetVehicle()) then
-		eyepos = LocalPlayer():EyePos()
-		eyenormal = gui.ScreenToVector(ScrW() / 2, ScrH() / 2)
+	local veh = LocalPlayer():GetVehicle()
+	if IsValid(veh) then
+		if veh:GetThirdPersonMode() then
+			-- desperate attempt at getting hovered ctx pos in vehicle. Works only in rendering hook?
+			eyepos = EyePos()
+			eyenormal = LocalPlayer():GetAimVector()
+		else
+			eyepos = LocalPlayer():EyePos()
+			eyenormal = gui.ScreenToVector(ScrW() / 2, ScrH() / 2)
+		end
 	else
 		local tr = LocalPlayer():GetEyeTrace()
 		eyepos = tr.StartPos
@@ -606,10 +617,8 @@ function tdui_meta:_ComputeInput()
 	local nowInput = 0
 	local justPressed = 0
 
-	local isInContextMenu = vgui.CursorVisible() and vgui.GetHoveredPanel() ~= g_ContextMenu
-
 	-- Check input (only checks if game panel is active)
-	if not isInContextMenu then
+	if not isInContextMenu() then
 		if input.IsMouseDown(MOUSE_LEFT) then
 			local code = tdui.FMOUSE_LEFT
 
@@ -650,12 +659,15 @@ function tdui_meta:_ComputeInput()
 end
 
 function tdui_meta:_UpdateInputStatus(forceUpdate, inputAspectRatio)
-	-- Don't update input down statuses more than once during a frame
+	-- only update input if some variable changed
 	local curFrame = FrameNumber()
-	if self._lastInputFrame == curFrame and not forceUpdate then
+	local curGEyePos = EyePos()
+	if self._lastInputFrame == curFrame and self._lastGEyePos == curGEyePos and not forceUpdate then
 		return
 	end
+	self._lastGEyePos = curGEyePos
 	self._lastInputFrame = curFrame
+
 	self._inputAspectRatio = inputAspectRatio
 
 	self:_ComputeScreenMouse()
