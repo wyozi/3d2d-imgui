@@ -8,7 +8,10 @@
 local tdui = include("tdui.lua") -- tdui.lua should be in same folder and AddCSLuaFile'd
 
 local p
-hook.Add("PostDrawTranslucentRenderables", "Paint3D2DUI", function()
+hook.Add("PostDrawTranslucentRenderables", "Paint3D2DUI", function(bDrawingSkybox, bDrawingDepth)
+    -- This is required so that TDUI isn't drawn twice (which would break input)
+    if bDrawingDepth then return end
+
     -- Create a 3D2D-IMGUI instance and cache it
     -- Note: if drawing TDUI inside a ENT:Draw(), you should cache the
     --       panel to the entity instance (self) instead of a local variable.
