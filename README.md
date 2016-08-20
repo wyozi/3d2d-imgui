@@ -2,7 +2,7 @@
 
 3D2D panels made simple. Vaguely based on [imgui](https://github.com/ocornut/imgui).
 
-![example](http://i.imgur.com/dhjqFZD.jpg)
+![example](http://fruitshake.wyozi.xyz:8080/f/hl2_2016-08-20_17-23-14.png)
 
 ```lua
 local tdui = include("tdui.lua") -- tdui.lua should be in same folder and AddCSLuaFile'd
@@ -40,8 +40,7 @@ end)
 ```
 
 ## Installation
-Copy [lua/autorun/client/3d2dimgui.lua](../blob/master/lua/autorun/client/3d2dimgui.lua) into a folder and remember to AddCSLuaFile it.
-Try to avoid `lua/autorun/client` folder. Instead prefer eg. `lua/myaddon/tdui.lua`.
+Copy [tdui.lua](../blob/master/tdui.lua) into a folder in your addon and make sure it is `AddCSLuaFile`d.
 
 ## Usage
 Panel creation (should be called only once):
