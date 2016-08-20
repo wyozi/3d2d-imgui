@@ -840,16 +840,24 @@ function tdui_meta:RenderQueued()
 			r, e = pcall(fn, self)
 		end
 
-		if not r then print("TDUI rendering error: ", e) end
+		if not r then
+			return false, e
+		end
 	end
+
+	return true
 end
 
 function tdui_meta:Render(pos, angles, scale)
 	self:_UpdatePAS(pos, angles, scale)
 
 	self:BeginRender()
-		self:RenderQueued()
+	local succ, err = self:RenderQueued()
 	self:EndRender()
+
+	if not succ then
+		error("TDUI Rendering error: " .. tostring(err))
+	end
 end
 
 -- EXPERIMENTAL rendering to texture
