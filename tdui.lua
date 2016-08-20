@@ -170,7 +170,7 @@ function tdui_meta:DrawRect(x, y, w, h, color, borderColor, borderWidth)
 
 	color = color or skin_color
 	borderColor = borderColor or skin_borderColor
-	
+
 	borderWidth = borderWidth or skin_borderWidth or 1
 
 	local uiscale = self:GetUIScale()
@@ -406,6 +406,44 @@ function tdui_meta:Button(str, font, x, y, w, h, clr, hover_clr)
 	return self:TestAreaInput(x, y, w, h)
 end
 
+local SLIDER_HEIGHT = 4
+local SLIDER_KNOB_WIDTH = 16
+
+function tdui_meta:_SliderInput(frac, x, y, w, h)
+	local pressed, pressing = self:TestAreaInput(x, y, w, h)
+	if pressed or pressing then
+		local mx, my = self:_GetLocalMousePos()
+		return (mx - x) / w
+	end
+	return frac
+end
+
+function tdui_meta:DrawSlider(frac, x, y, w, h)
+	surface.SetDrawColor(tdui.COLOR_WHITE_TRANSLUCENT)
+	surface.DrawRect(x, y + h/2 - SLIDER_HEIGHT/2, w, SLIDER_HEIGHT)
+
+	local _, _, hovering = self:TestAreaInput(x, y, w, h)
+	if hovering then
+		local mx, my = self:_GetLocalMousePos()
+		local hoverFrac = (mx - x) / w
+
+		local hknobMidX = x + w * hoverFrac
+		surface.SetDrawColor(tdui.COLOR_WHITE_TRANSLUCENT)
+		surface.DrawRect(hknobMidX - SLIDER_KNOB_WIDTH/2, y, SLIDER_KNOB_WIDTH, h)
+	end
+
+	local knobMidX = x + w * frac
+	surface.SetDrawColor(tdui.COLOR_WHITE)
+	surface.DrawRect(knobMidX - SLIDER_KNOB_WIDTH/2, y, SLIDER_KNOB_WIDTH, h)
+
+	return self:_SliderInput(frac, x, y, w, h)
+end
+tdui.RenderOperations["slider"] = tdui_meta.DrawSlider
+function tdui_meta:Slider(frac, x, y, w, h)
+	self:_QueueRenderOP("slider", frac, x, y, w, h)
+	return self:_SliderInput(frac, x, y, w, h)
+end
+
 -- Returns input state bitmap of input within currently active renderbounds
 function tdui_meta:GetInputStateWithinRenderBounds()
 	local rb = self._renderBounds
@@ -545,6 +583,10 @@ function tdui_meta:_CheckInputInRect(x, y, w, h, input)
 	return state
 end
 
+function tdui_meta:_GetLocalMousePos()
+	return self._mx, self._my
+end
+
 local function isInContextMenu()
 	return vgui.CursorVisible() and vgui.GetHoveredPanel() ~= g_ContextMenu
 end
@@ -605,7 +647,7 @@ function tdui_meta:_ComputeScreenMouse()
 		local q = traceQueryTable
 		q.start = eyepos
 		q.endpos = hitPos
-		
+
 		local tr = util.TraceLine(q)
 		self._mObscured = tr.Hit
 	end
@@ -635,7 +677,7 @@ function tdui_meta:_ComputeInput()
 				justPressed = bor(justPressed, code)
 			end
 		end
-		
+
 		local useKey = KEY_E
 
 		-- attempt to map to key player has bound for +use, but fall back to KEY_E

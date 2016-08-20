@@ -61,6 +61,21 @@ p:Polygon(vertices, color, material)
 p:Text(text, font, x, y, [color], [halign], [valign], [scissor_rect])
 
 local isMouseOrUseDown = p:Button(text, font, x, y, w, h, [color])
+if isMouseOrUseDown then
+ 	-- this is only called once per press
+	print "Hello!"
+end
+
+-- Note: because TDUI attempts to be as stateless as possible, you need to pass
+-- the current slider value to the slider function. The fraction returned by the
+-- function is the new slider value.
+-- Fraction is a numeric value between 0 and 1. TDUI Slider has no concept of "min" and "max"
+-- values. You'll need to calculate those yourself.
+local frac = p:Slider(gFrac, x, y, w, h)
+if frac ~= gFrac then
+	print "Slider value changed!"
+	gFrac = frac
+end
 
 -- You can pass normal GMod fonts to the font parameter of p:Text and p:Button
 -- but it also accepts some special formats that you can use:

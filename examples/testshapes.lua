@@ -55,6 +55,11 @@ hook.Add("PostDrawTranslucentRenderables", "Paint3D2DUI", function(bDrawingSkybo
 	if _hover then p:Text("Hovering", "!Roboto@18", x + 10, y + 80, nil, TEXT_ALIGN_LEFT) end
 	if _press then p:Text("Pressing", "!Roboto@18", x + 10, y + 100, nil, TEXT_ALIGN_LEFT) end
 
+	local x, y = allocateZone("Sliders", 250, 250)
+
+	state.sliderFrac = p:Slider(state.sliderFrac, x + 10, y + 10, 220, 40)
+	p:Text(tostring(state.sliderFrac), "!Roboto@18", x + 10, y + 60, nil, TEXT_ALIGN_LEFT)
+
     p:Cursor()
 
 	-- draws on gm_construct spawn building wall
