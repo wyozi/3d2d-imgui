@@ -622,7 +622,12 @@ function tdui_meta:_ComputeScreenMouse()
 	else
 		local tr = LocalPlayer():GetEyeTrace()
 		eyepos = tr.StartPos
-		eyenormal = tr.Normal
+
+		if vgui.IsHoveringWorld() and vgui.CursorVisible() then
+			eyenormal = gui.ScreenToVector(gui.MousePos())
+		else
+			eyenormal = tr.Normal
+		end
 	end
 
 	-- Calculate mouse position in local space
