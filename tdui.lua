@@ -419,22 +419,22 @@ function tdui_meta:_SliderInput(frac, x, y, w, h)
 end
 
 function tdui_meta:DrawSlider(frac, x, y, w, h)
-	surface.SetDrawColor(tdui.COLOR_WHITE_TRANSLUCENT)
-	surface.DrawRect(x, y + h/2 - SLIDER_HEIGHT/2, w, SLIDER_HEIGHT)
-
+	frac = math.min(math.max(frac, 0), 1)
+	-- Input must be retrieved with UIScale adjustments
 	local _, _, hovering = self:TestAreaInput(x, y, w, h)
+
+	self:DrawRect(x, y + h/2 - SLIDER_HEIGHT/2, w, SLIDER_HEIGHT, tdui.COLOR_WHITE_TRANSLUCENT)
+
 	if hovering then
 		local mx, my = self:_GetLocalMousePos()
 		local hoverFrac = (mx - x) / w
 
 		local hknobMidX = x + w * hoverFrac
-		surface.SetDrawColor(tdui.COLOR_WHITE_TRANSLUCENT)
-		surface.DrawRect(hknobMidX - SLIDER_KNOB_WIDTH/2, y, SLIDER_KNOB_WIDTH, h)
+		self:DrawRect(hknobMidX - SLIDER_KNOB_WIDTH/2, y, SLIDER_KNOB_WIDTH, h, tdui.COLOR_WHITE_TRANSLUCENT)
 	end
 
 	local knobMidX = x + w * frac
-	surface.SetDrawColor(tdui.COLOR_WHITE)
-	surface.DrawRect(knobMidX - SLIDER_KNOB_WIDTH/2, y, SLIDER_KNOB_WIDTH, h)
+	self:DrawRect(knobMidX - SLIDER_KNOB_WIDTH/2, y, SLIDER_KNOB_WIDTH, h, tdui.COLOR_WHITE)
 
 	return self:_SliderInput(frac, x, y, w, h)
 end
@@ -583,7 +583,16 @@ function tdui_meta:_CheckInputInRect(x, y, w, h, input)
 	return state
 end
 
+-- Gets the mouse position transformed back to local space (ie. the space in which
+-- coordinates are passed to TDUI) from render space (ie. at what coordinate are
+-- primitives actually drawn in)
 function tdui_meta:_GetLocalMousePos()
+	local uiscale = self:GetUIScale()
+	local rmx, rmy = self:_GetRenderMousePos()
+	return rmx/uiscale, rmy/uiscale
+end
+-- Returns mouse position in render space
+function tdui_meta:_GetRenderMousePos()
 	return self._mx, self._my
 end
 

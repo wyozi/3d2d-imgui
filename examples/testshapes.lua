@@ -1,10 +1,13 @@
 local tdui = include("tdui/tdui.lua")
 
-local p
-hook.Add("PostDrawTranslucentRenderables", "Paint3D2DUI", function(bDrawingSkybox, bDrawingDepth)
-    if bDrawingDepth then return end
+local state = { sliderFrac = 0.5 }
 
-	p = p or tdui.Create()
+local bm_t = 0
+local bm_c = 0
+local bm_avg = 0
+
+local function drawToP(p)
+	p:Text(string.format("Average render time in past 100 renders: %fms", bm_avg), "!Roboto@18", 10, 260, nil, TEXT_ALIGN_LEFT)
 
 	local _zx = 0
 	local function allocateZone(name, w, h)
@@ -61,7 +64,32 @@ hook.Add("PostDrawTranslucentRenderables", "Paint3D2DUI", function(bDrawingSkybo
 	p:Text(tostring(state.sliderFrac), "!Roboto@18", x + 10, y + 60, nil, TEXT_ALIGN_LEFT)
 
     p:Cursor()
+end
+
+local p, pbig
+hook.Add("PostDrawTranslucentRenderables", "Paint3D2DUI", function(bDrawingSkybox, bDrawingDepth)
+    if bDrawingDepth then return end
+
+	local bm_start = SysTime()
+
+	p = p or tdui.Create()
+	drawToP(p)
 
 	-- draws on gm_construct spawn building wall
     p:Render(Vector(1770, 800, -60), Angle(0, 0, 0), 0.1)
+
+	local bm_elapsed = SysTime() - bm_start
+
+	pbig = pbig or tdui.Create()
+	pbig:SetUIScale(2)
+	drawToP(pbig)
+    pbig:Render(Vector(1770, 400, -40), Angle(0, 0, 0), 0.1)
+
+	bm_t = bm_t + bm_elapsed
+	bm_c = bm_c + 1
+	if bm_c == 100 then
+		bm_avg = ((bm_t / bm_c) * 1000)
+		bm_c = 0
+		bm_t = 0
+	end
 end)
