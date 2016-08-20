@@ -507,7 +507,7 @@ function tdui_meta:_QueueRender(fn)
 	end
 
 	self.renderQueuePointer = self.renderQueuePointer + 1
-	self.renderQueue[self.renderQueuePointer] = fn
+	self.renderQueue[self.renderQueuePointer] = {fn}
 end
 
 -- Queues a render operation to be done during next render pass
@@ -829,16 +829,10 @@ end
 
 function tdui_meta:RenderQueued()
 	for i = 1, self.renderQueuePointer do
-		local fn = self.renderQueue[i]
-
-		local r, e
-
-		-- If its a queued operation
-		if type(fn) == "table" then
-			r, e =  pcall(fn[1], self, unpack(fn, 2))
-		else
-			r, e = pcall(fn, self)
-		end
+		-- First component = render function
+		-- Second.. components = render payload
+		local renderData = self.renderQueue[i]
+		local r, e = pcall(renderData[1], self, unpack(renderData, 2))
 
 		if not r then
 			return false, e
