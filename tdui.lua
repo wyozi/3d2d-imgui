@@ -696,7 +696,7 @@ function tdui_meta:_ComputeInput()
 
 		-- attempt to map to key player has bound for +use, but fall back to KEY_E
 		local useBoundKey = input.LookupBinding("+use")
-		if useBoundKey ~= "e" then
+		if useBoundKey and useBoundKey ~= "e" then
 			useKey = _G["KEY_" .. useBoundKey:upper()] or KEY_E
 		end
 
