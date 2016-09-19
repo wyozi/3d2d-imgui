@@ -739,8 +739,10 @@ function tdui_meta:_UpdatePAS(pos, angles, scale)
 
 	-- If updating the angle of the render context, we apply a transformation,
 	-- which makes it so that if angles was EyeAngles(), it would face us directly.
-	-- TODO: this might screw some people up?
 	if angles then
+		-- Create a copy of the angle object
+		angles = Angle(angles.p, angles.y, angles.r)
+		
 		angles:RotateAroundAxis(angles:Right(), 90)
 		angles:RotateAroundAxis(angles:Up(), -90)
 	end
