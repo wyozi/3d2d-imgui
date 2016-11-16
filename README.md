@@ -40,7 +40,7 @@ end)
 ```
 
 ## Installation
-Copy [tdui.lua](../blob/master/tdui.lua) into a folder in your addon and make sure it is `AddCSLuaFile`d.
+Copy [tdui.lua](../master/tdui.lua) into a folder in your addon and make sure it is `AddCSLuaFile`d.
 
 ## Usage
 Panel creation (should be called only once):
