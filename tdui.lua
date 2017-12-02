@@ -61,6 +61,9 @@ tdui.COLOR_ORANGE = Color(255, 127, 0)
 tdui.COLOR_ORANGE_DARK = Color(220, 80, 0)
 tdui.COLOR_ORANGE_LIGHT = Color(255, 180, 0)
 
+-- Feature constants (indicate existence of a feature)
+tdui.FEATURE_STENCILRECT_UISCALE = true -- Stencil rectangle is scaled by UIScale
+
 -- Helper function. Call this inside a deprecated function as the first statement
 local d = {}
 function tdui.Deprecate(msg)
@@ -157,6 +160,9 @@ function tdui_meta:_GetSkinParams(type, ...)
 end
 
 function tdui_meta:EnableRectStencil(x, y, w, h)
+	local uiscale = self:GetUIScale()
+	x, y, w, h = x * uiscale, y * uiscale, w * uiscale, h * uiscale
+
 	self:_QueueRenderOP("stencil_rect", x, y, w, h)
 end
 
