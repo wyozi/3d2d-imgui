@@ -22,9 +22,36 @@
 	SOFTWARE.
 ]]
 
--- Localize globals
-local bor, band, lshift = bit.bor, bit.band, bit.lshift
+-- Localize libraries
+local bit, render, surface, string, math, vgui =
+	bit, render, surface, string, math, vgui
 
+-- Localize some library functions
+local type, pcall, IsValid, ScrW, ScrH, FrameNumber, EyePos, EyeAngles, Vector,
+ 	Angle, SysTime, unpack =
+	type, pcall, IsValid, ScrW, ScrH, FrameNumber, EyePos, EyeAngles, Vector,
+	Angle, SysTime, unpack
+local bor, band, lshift = bit.bor, bit.band, bit.lshift
+local math_min, math_max, math_Round = math.min, math.max, math.Round
+local string_byte = string.byte
+local util_IntersectRayWithPlane, util_TraceLine =
+	util.IntersectRayWithPlane, util.TraceLine
+local vgui_IsHoveringWorld, vgui_CursorVisible =
+	vgui.IsHoveringWorld, vgui.CursorVisible
+local gui_ScreenToVector, gui_MousePos = gui.ScreenToVector, gui.MousePos
+local surface_SetFont, surface_SetTextColor, surface_GetTextSize,
+	surface_SetTextPos, surface_DrawText, surface_SetDrawColor,
+	surface_DrawLine =
+	surface.SetFont, surface.SetTextColor, surface.GetTextSize,
+	surface.SetTextPos, surface.DrawText, surface.SetDrawColor,
+	surface.DrawLine
+local render_SetColorMaterial, render_PushFilterMin, render_PushFilterMag,
+	render_PopFilterMin, render_PopFilterMag, render_GetRenderTarget =
+	render.SetColorMaterial, render.PushFilterMin, render.PushFilterMag,
+	render.PopFilterMin, render.PopFilterMag, render.GetRenderTarget
+local cam_Start3D2D, cam_End3D2D = cam.Start3D2D, cam.End3D2D
+
+-- Setup TDUI
 local old_tdui = tdui -- autorefresh support
 local tdui = {}
 
@@ -264,7 +291,7 @@ local _createdFonts = {}
 local EXCLAMATION_BYTE = string.byte("!")
 function tdui_meta:_ParseFont(font)
 	-- special font
-	if font:byte(1) == EXCLAMATION_BYTE then
+	if string_byte(font, 1) == EXCLAMATION_BYTE then
 		-- Check if font has been cached
 		-- This cache is cleared on UIScale change
 		local cachedFont = self.specialFontCache[font]
@@ -304,10 +331,10 @@ function tdui_meta:DrawText(str, font, x, y, clr, halign, valign, scissor_rect)
 	local uiscale = self:GetUIScale()
 	x, y = x * uiscale, y * uiscale
 
-	surface.SetFont(self:_ParseFont(font))
-	surface.SetTextColor(clr)
+	surface_SetFont(self:_ParseFont(font))
+	surface_SetTextColor(clr)
 
-	local tw, th = surface.GetTextSize(str)
+	local tw, th = surface_GetTextSize(str)
 
 	-- Horizontal align default: TEXT_ALIGN_CENTER
 	local aligned_x = x - tw / 2
@@ -321,13 +348,13 @@ function tdui_meta:DrawText(str, font, x, y, clr, halign, valign, scissor_rect)
 	elseif valign == TEXT_ALIGN_BOTTOM then  aligned_y = y - th
 	end
 
-	surface.SetTextPos(aligned_x, aligned_y)
+	surface_SetTextPos(aligned_x, aligned_y)
 
 	if scissor_rect then
 		self:EnableRectStencil(scissor_rect.x, scissor_rect.y, scissor_rect.x2-scissor_rect.x, scissor_rect.y2-scissor_rect.y)
 	end
 
-	surface.DrawText(str)
+	surface_DrawText(str)
 
 	if scissor_rect then
 		self:DisableStencil()
@@ -348,7 +375,7 @@ function tdui_meta:DrawButton(input, font, x, y, w, h, clr, hover_clr)
 	fgColor = clr or fgColor
 	fgHoverColor = hover_clr or fgHoverColor
 
-	surface.SetFont(self:_ParseFont(font))
+	surface_SetFont(self:_ParseFont(font))
 
 	local just_pressed, pressing, hovering = self:TestAreaInput(x, y, w, h, true)
 
@@ -393,7 +420,7 @@ function tdui_meta:DrawButton(input, font, x, y, w, h, clr, hover_clr)
 				size = (v.width or v.mat:Width()) * uiscale
 			else
 				self:DrawText(v, font, x + w / 2 + in_x, y + h / 2, finalFgColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-				size = surface.GetTextSize(v)
+				size = surface_GetTextSize(v)
 			end
 			in_x = in_x + (size + padding)
 		end
@@ -425,7 +452,7 @@ function tdui_meta:_SliderInput(frac, x, y, w, h)
 end
 
 function tdui_meta:DrawSlider(frac, x, y, w, h)
-	frac = math.min(math.max(frac, 0), 1)
+	frac = math_min(math_max(frac, 0), 1)
 	-- Input must be retrieved with UIScale adjustments
 	local _, _, hovering = self:TestAreaInput(x, y, w, h)
 
@@ -474,10 +501,10 @@ function tdui_meta:DrawCursor()
 		surface.SetDrawColor(color)
 	end
 
-	local cursorSize = math.Round(2 * self:GetUIScale())
+	local cursorSize = math_Round(2 * self:GetUIScale())
 
-	surface.DrawLine(self._mx - cursorSize, self._my, self._mx + cursorSize, self._my)
-	surface.DrawLine(self._mx, self._my - cursorSize, self._mx, self._my + cursorSize)
+	surface_DrawLine(self._mx - cursorSize, self._my, self._mx + cursorSize, self._my)
+	surface_DrawLine(self._mx, self._my - cursorSize, self._mx, self._my + cursorSize)
 end
 tdui.RenderOperations["cursor"] = tdui_meta.DrawCursor
 function tdui_meta:Cursor()
@@ -537,11 +564,11 @@ end
 --- Should be called every time something is drawn with an approximate bounding
 -- box of the drawn area. Used for eg. determining where we should show the cursor
 function tdui_meta:_ExpandRenderBounds(x, y, w, h)
-	self._renderBounds.x = math.min(self._renderBounds.x, x)
-	self._renderBounds.y = math.min(self._renderBounds.y, y)
+	self._renderBounds.x = math_min(self._renderBounds.x, x)
+	self._renderBounds.y = math_min(self._renderBounds.y, y)
 
-	self._renderBounds.x2 = math.max(self._renderBounds.x2, x + w)
-	self._renderBounds.y2 = math.max(self._renderBounds.y2, y + h)
+	self._renderBounds.x2 = math_max(self._renderBounds.x2, x + w)
+	self._renderBounds.y2 = math_max(self._renderBounds.y2, y + h)
 end
 
 function tdui_meta:_WorldToLocal(rayOrigin, rayDirection)
@@ -551,7 +578,7 @@ function tdui_meta:_WorldToLocal(rayOrigin, rayDirection)
 
 	local planeNormal = angles:Up()
 
-	local hitPos = util.IntersectRayWithPlane(rayOrigin, rayDirection, pos, planeNormal)
+	local hitPos = util_IntersectRayWithPlane(rayOrigin, rayDirection, pos, planeNormal)
 	if hitPos then
 		local diff = pos - hitPos
 
@@ -615,21 +642,22 @@ local traceResultTable = {}
 local traceQueryTable = { filter = traceEntFilter, output = traceResultTable }
 function tdui_meta:_ComputeScreenMouse()
 	local eyepos, eyenormal
-	local veh = LocalPlayer():GetVehicle()
+	local me = LocalPlayer()
+	local veh = me:GetVehicle()
 	if IsValid(veh) then
 		if veh:GetThirdPersonMode() then
 			-- desperate attempt at getting hovered ctx pos in vehicle. Works only in rendering hook?
 			eyepos = EyePos()
-			eyenormal = LocalPlayer():GetAimVector()
+			eyenormal = me:GetAimVector()
 		else
-			eyepos = LocalPlayer():EyePos()
+			eyepos = me:EyePos()
 			eyenormal = gui.ScreenToVector(ScrW() / 2, ScrH() / 2)
 		end
 	else
-		local tr = LocalPlayer():GetEyeTrace()
+		local tr = me:GetEyeTrace()
 		eyepos = tr.StartPos
 
-		if vgui.IsHoveringWorld() and vgui.CursorVisible() then
+		if vgui_IsHoveringWorld() and vgui_CursorVisible() then
 			eyenormal = gui.ScreenToVector(gui.MousePos())
 		else
 			eyenormal = tr.Normal
@@ -668,7 +696,7 @@ function tdui_meta:_ComputeScreenMouse()
 		q.start = eyepos
 		q.endpos = hitPos
 
-		local tr = util.TraceLine(q)
+		local tr = util_TraceLine(q)
 		self._mObscured = tr.Hit
 	end
 end
@@ -800,8 +828,8 @@ function tdui_meta:PreRenderReset()
 	self._renderBounds.y2 = 0
 
 	-- Reset colors, materials
-	surface.SetDrawColor(tdui.COLOR_WHITE)
-	render.SetColorMaterial()
+	surface_SetDrawColor(tdui.COLOR_WHITE)
+	render_SetColorMaterial()
 end
 
 function tdui_meta:BeginRender()
@@ -818,10 +846,10 @@ function tdui_meta:BeginRender()
 	end
 
 	-- Start render context
-	render.PushFilterMin(TEXFILTER.ANISOTROPIC)
-	render.PushFilterMag(TEXFILTER.ANISOTROPIC)
+	render_PushFilterMin(TEXFILTER.ANISOTROPIC)
+	render_PushFilterMag(TEXFILTER.ANISOTROPIC)
 
-	cam.Start3D2D(self._pos, self._angles, self._scale)
+	cam_Start3D2D(self._pos, self._angles, self._scale)
 
 	self._rendering = true
 	self._renderStarted = SysTime()
@@ -848,10 +876,10 @@ function tdui_meta:EndRender()
 	self._rendering = false
 
 	-- End render context
-	cam.End3D2D()
+	cam_End3D2D()
 
-	render.PopFilterMin()
-	render.PopFilterMag()
+	render_PopFilterMin()
+	render_PopFilterMag()
 
 	if self._IgnoreZActive then
 		cam.IgnoreZ(false)
@@ -922,7 +950,7 @@ end
 
 -- Are we rendering to the "main" render target aka the screen
 function tdui_meta:IsWorldRenderpass()
-	return render.GetRenderTarget() == nil
+	return render_GetRenderTarget() == nil
 end
 
 -- Note: does not affect return values from CheckInputInRect
