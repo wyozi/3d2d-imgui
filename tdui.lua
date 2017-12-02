@@ -22,6 +22,8 @@
 	SOFTWARE.
 ]]
 
+if SERVER then return end
+
 -- Localize libraries
 local bit, render, surface, string, math, vgui =
 	bit, render, surface, string, math, vgui
