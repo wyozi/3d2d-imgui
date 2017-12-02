@@ -564,8 +564,8 @@ function tdui_meta:_WorldToLocal(rayOrigin, rayDirection)
 end
 
 function tdui_meta:_CheckInputInRect(x, y, w, h, input)
-	-- Update input. If it's already been updated this frame, this'll NOP
-	self:_UpdateInputStatus()
+	-- Update screen mouse
+	self:_UpdateScreenMouse()
 
 	input = input or tdui.FINPUT_PRESSED
 
@@ -720,20 +720,33 @@ function tdui_meta:_ComputeInput()
 	self._justPressed = justPressed
 end
 
+-- UpdateInputStatus should be called once per frame to update input status
+-- This is used for things such as making sure buttons only get clicked once
 function tdui_meta:_UpdateInputStatus(forceUpdate, inputAspectRatio)
-	-- only update input if some variable changed
+	-- Make sure we only do something if the frame changed
 	local curFrame = FrameNumber()
-	local curGEyePos = EyePos()
-	if self._lastInputFrame == curFrame and self._lastGEyePos == curGEyePos and not forceUpdate then
+	if self._lastInputFrame == curFrame and not forceUpdate then
 		return
 	end
-	self._lastGEyePos = curGEyePos
 	self._lastInputFrame = curFrame
 
 	self._inputAspectRatio = inputAspectRatio
 
-	self:_ComputeScreenMouse()
 	self:_ComputeInput()
+end
+
+-- Updates the screen mouse position
+-- Contains additional checks to make sure we don't do it if we don't need to
+function tdui_meta:_UpdateScreenMouse()
+	local curGEyePos = EyePos()
+	local curGEyeAngles = EyeAngles()
+	if self._lastGEyePos == curGEyePos and self._lastGEyeAngles == curGEyeAngles then
+		return
+	end
+	self._lastGEyePos = curGEyePos
+	self._lastGEyeAngles = curGEyeAngles
+
+	self:_ComputeScreenMouse()
 end
 
 -- The default values for rendering params
@@ -909,12 +922,12 @@ end
 
 -- Are we rendering to the "main" render target aka the screen
 function tdui_meta:IsWorldRenderpass()
-	return not IsValid(render.GetRenderTarget())
+	return render.GetRenderTarget() == nil
 end
 
 -- Note: does not affect return values from CheckInputInRect
 function tdui_meta:ShouldAcceptInput()
-	return self:IsFirstRenderThisFrame()
+	return self:IsWorldRenderpass()
 end
 
 -- Scales all UI elements (including fonts that use custom format)
@@ -928,6 +941,7 @@ function tdui_meta:GetUIScale()
 	return self._uiscale or 1
 end
 
+-- Create code for detecting +use presses on TDUI, which should be blocked if BlockUseBind is enabled
 local useBindChecks = setmetatable({}, {__mode = "k"})
 
 hook.Add("PlayerBindPress", "TDUI_BlockUseBindChecker" .. debug.getinfo(1, "S").short_src, function(ply, bind, pressed)
@@ -950,6 +964,11 @@ end)
 -- This is useful to prevent eg. exiting from a car if trying to interact with TDUI inside a car
 function tdui_meta:BlockUseBind()
 	useBindChecks[self] = true
+end
+
+-- OBSOLETE!
+-- Old description: Enables workaround which fixes input events happening in world space.
+function tdui_meta:EnableReflectionWorkaround()
 end
 
 -- Create singleton instance of TDUI
