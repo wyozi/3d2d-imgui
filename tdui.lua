@@ -228,8 +228,8 @@ function tdui_meta:DrawRect(x, y, w, h, color, borderColor, borderWidth)
 	self:_ExpandRenderBounds(x, y, w, h)
 end
 tdui.RenderOperations["rect"] = tdui_meta.DrawRect
-function tdui_meta:Rect(x, y, w, h, clr, out_clr)
-	self:_QueueRenderOP("rect", x, y, w, h, clr, out_clr)
+function tdui_meta:Rect(x, y, w, h, clr, out_clr, bwide)
+	self:_QueueRenderOP("rect", x, y, w, h, clr, out_clr,bwide)
 end
 
 function tdui_meta:DrawLine(x, y, x2, y2, clr)
