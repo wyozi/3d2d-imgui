@@ -2,6 +2,16 @@
 
 3D2D panels made simple. Vaguely based on [imgui](https://github.com/ocornut/imgui).
 
+## NOTE: DEVELOPMENT OF THIS LIBRARY HAS BEEN STOPPED
+
+You should consider using the [IMGUI](https://github.com/wyozi-gmod/imgui) library. It fixes many of the fundamental design issues this library has had from the beginning, especially related to heap memory usage. Here's a small comparison of equivalent code rendering 30 clickable buttons in each library:
+```
+tdui used 	24.4609375	 kbytes of heap memory
+imgui used 	0.21484375	 kbytes of heap memory
+```
+
+## Example
+
 ![example](http://fruitshake.wyozi.xyz:8080/f/hl2_2016-08-20_17-23-14.png)
 
 ```lua
