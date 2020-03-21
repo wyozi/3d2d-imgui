@@ -1,10 +1,10 @@
 ## 3D2D Immediate Mode GUI for Garry's Mod
 
-3D2D panels made simple. Vaguely based on [imgui](https://github.com/ocornut/imgui).
+3D2D panels made simple.
 
-## NOTE: DEVELOPMENT OF THIS LIBRARY HAS BEEN STOPPED
+# USE [IMGUI](https://github.com/wyozi-gmod/imgui) INSTEAD
 
-You should consider using the [IMGUI](https://github.com/wyozi-gmod/imgui) library. It fixes many of the fundamental design issues this library has had from the beginning, especially related to heap memory usage. Here's a small comparison of equivalent code rendering 30 clickable buttons in each library:
+Development of this library has been stopped and you should use [IMGUI](https://github.com/wyozi-gmod/imgui) library. It has a more flexible API and fixes many of the fundamental design issues this library has had from the beginning, especially related to heap memory usage. Here's a small comparison of equivalent code rendering 30 clickable buttons in each library:
 ```
 tdui used 	24.4609375	 kbytes of heap memory
 imgui used 	0.21484375	 kbytes of heap memory
